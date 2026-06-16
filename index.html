@@ -222,7 +222,7 @@ async function buscarDados() {
     const headers = Object.keys(rows[0]);
     const isDomestica = abaAtual === 3;
     const empresaKey = isDomestica
-      ? (headers.find(h => h.toLowerCase().includes('domestic')) || headers[1])
+      ? (headers.find(h => h.toUpperCase() === 'DOMESTICOS') || headers[1])
       : (headers.find(h => h.toLowerCase().includes('empresa')) || headers[1]);
 
     empresas = rows
