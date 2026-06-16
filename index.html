@@ -3,21 +3,27 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard — Fechamento de Folha</title>
+<title>Dashboard — Folha de Pagamento</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F5F5F3;color:#1a1a1a;min-height:100vh}
 .topbar{background:#fff;border-bottom:1px solid #EBEBEB;padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:10}
-.topbar-left{display:flex;flex-direction:column;gap:2px}
 .topbar-title{font-size:15px;font-weight:500}
-.topbar-sync{font-size:11px;color:#888;display:flex;align-items:center;gap:6px}
+.topbar-sync{font-size:11px;color:#888;display:flex;align-items:center;gap:6px;margin-top:2px}
 .live-dot{width:7px;height:7px;border-radius:50%;background:#1D9E75;display:inline-block;animation:pulse 2s infinite}
 .live-dot.erro{background:#E24B4A;animation:none}
 .live-dot.loading{background:#E9A82B;animation:none}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
 .btn-refresh{font-size:12px;padding:6px 14px;border:1px solid #DDD;border-radius:8px;background:#fff;cursor:pointer;color:#555;transition:all .15s}
 .btn-refresh:hover{background:#F0FAF6;border-color:#1D9E75;color:#1D9E75}
+
+/* Abas */
+.tabs{background:#fff;border-bottom:1px solid #EBEBEB;padding:0 2rem;display:flex;gap:4px;overflow-x:auto}
+.tab-btn{padding:14px 20px;font-size:13px;font-weight:500;color:#888;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .15s}
+.tab-btn:hover{color:#1a1a1a}
+.tab-btn.active{color:#1D9E75;border-bottom-color:#1D9E75}
+
 .main{max-width:1100px;margin:0 auto;padding:2rem}
 .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:2rem}
 .metric{background:#fff;border-radius:12px;padding:1.1rem 1.2rem;border-left:3px solid transparent}
@@ -62,22 +68,23 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <body>
 
 <div class="topbar">
-  <div class="topbar-left">
-    <div class="topbar-title">Fechamento de Folha</div>
-    <div class="topbar-sync">
-      <span class="live-dot" id="dot"></span>
-      <span id="sync-txt">Carregando...</span>
-    </div>
+  <div>
+    <div class="topbar-title">Dashboard — Folha de Pagamento</div>
+    <div class="topbar-sync"><span class="live-dot" id="dot"></span><span id="sync-txt">Carregando...</span></div>
   </div>
   <button class="btn-refresh" onclick="buscarDados()">↻ Atualizar agora</button>
 </div>
 
+<div class="tabs">
+  <button class="tab-btn active" onclick="trocarAba(0,this)">📋 Fechamento de Folha</button>
+  <button class="tab-btn" onclick="trocarAba(1,this)">📄 Sem Lançamento</button>
+  <button class="tab-btn" onclick="trocarAba(2,this)">💼 Pró-labore</button>
+  <button class="tab-btn" onclick="trocarAba(3,this)">🏠 Doméstica</button>
+</div>
+
 <div class="main">
   <div class="erro-box" id="erro-box"></div>
-
-  <div id="loading-area" class="loading-msg">
-    <span class="spinner"></span>Buscando dados da planilha...
-  </div>
+  <div class="loading-msg" id="loading-area"><span class="spinner"></span>Buscando dados...</div>
 
   <div id="conteudo" style="display:none">
     <div class="metrics">
@@ -111,7 +118,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
 
     <div class="table-card">
-      <div class="table-header">
+      <div class="table-header" id="table-header">
         <span>Empresa</span><span>Cálculo</span><span>Recibo</span><span>eSocial</span>
         <span>DARF</span><span>FGTS</span><span>Enviado</span><span>Progresso</span><span>%</span>
       </div>
@@ -121,13 +128,37 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 </div>
 
 <script>
-const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ67WDRR9xAC8clG6QgrtsHu8wQQmhStAzaDnCHimjJA7A96KK0icXOXeuCgZLOz9x2j8XP6cRRibka/pub?gid=806785241&single=true&output=csv';
-const INTERVALO = 30000;
+const ABAS = [
+  {
+    nome: 'Fechamento de Folha',
+    url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ67WDRR9xAC8clG6QgrtsHu8wQQmhStAzaDnCHimjJA7A96KK0icXOXeuCgZLOz9x2j8XP6cRRibka/pub?gid=806785241&single=true&output=csv',
+    etapasKeys: ['Calculo Folha','Recibo Salario','eSocial Dctfweb','Darf INSS Irf e PIS','FGTS','ENVIADO'],
+    etapasLabels: ['Cálculo','Recibo','eSocial','DARF','FGTS','Enviado']
+  },
+  {
+    nome: 'Sem Lançamento',
+    url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ67WDRR9xAC8clG6QgrtsHu8wQQmhStAzaDnCHimjJA7A96KK0icXOXeuCgZLOz9x2j8XP6cRRibka/pub?gid=1452959299&single=true&output=csv',
+    etapasKeys: ['Calculo Folha','Recibo Salario','eSocial Dctfweb','Darf INSS Irf e PIS','FGTS','ENVIADO'],
+    etapasLabels: ['Cálculo','Recibo','eSocial','DARF','FGTS','Enviado']
+  },
+  {
+    nome: 'Pró-labore',
+    url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ67WDRR9xAC8clG6QgrtsHu8wQQmhStAzaDnCHimjJA7A96KK0icXOXeuCgZLOz9x2j8XP6cRRibka/pub?gid=1291167841&single=true&output=csv',
+    etapasKeys: ['Calculo Folha','Recibo Salario','eSocial Dctfweb','Darf INSS Irf e PIS','FGTS','ENVIADO'],
+    etapasLabels: ['Cálculo','Recibo','eSocial','DARF','FGTS','Enviado']
+  },
+  {
+    nome: 'Doméstica',
+    url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ67WDRR9xAC8clG6QgrtsHu8wQQmhStAzaDnCHimjJA7A96KK0icXOXeuCgZLOz9x2j8XP6cRRibka/pub?gid=0&single=true&output=csv',
+    etapasKeys: ['Calculo Folha','Recibo Salario','eSocial Dctfweb','Darf INSS Irf e PIS','FGTS','ENVIADO'],
+    etapasLabels: ['Cálculo','Recibo','eSocial','DARF','FGTS','Enviado']
+  }
+];
 
-const ETAPAS_KEYS = ['Calculo Folha','Recibo Salario','eSocial Dctfweb','Darf INSS Irf e PIS','FGTS','ENVIADO'];
-const ETAPAS_LABELS = ['Cálculo','Recibo','eSocial','DARF','FGTS','Enviado'];
-
-let empresas = [], filtroAtual = 'todas', barChart, pieChart, timer;
+let abaAtual = 0;
+let cache = {};
+let empresas = [], filtroAtual = 'todas';
+let barChart, pieChart, timer;
 
 function isDone(v) {
   const s = String(v||'').trim();
@@ -139,7 +170,6 @@ function parseCSV(text) {
   const sep = lines[0].includes(';') ? ';' : ',';
   const headers = lines[0].split(sep).map(h => h.replace(/^"|"$/g,'').trim());
   return lines.slice(1).map(line => {
-    // suporte a campos com vírgula entre aspas
     const vals = [];
     let cur = '', inQ = false;
     for (let c of line) {
@@ -149,7 +179,7 @@ function parseCSV(text) {
     }
     vals.push(cur.trim());
     const obj = {};
-    headers.forEach((h,i) => obj[h] = vals[i] || '');
+    headers.forEach((h,i) => obj[h] = (vals[i]||'').replace(/^"|"$/g,'').trim());
     return obj;
   });
 }
@@ -159,17 +189,35 @@ function findCol(headers, target) {
   return headers.find(h => h && h.toLowerCase().replace(/[^a-z0-9]/g,'').startsWith(t.slice(0,6))) || null;
 }
 
+function trocarAba(idx, btn) {
+  abaAtual = idx;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  filtroAtual = 'todas';
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.filter-btn')[0].classList.add('active');
+  document.getElementById('search').value = '';
+
+  if (cache[idx]) {
+    empresas = cache[idx];
+    renderTudo();
+  } else {
+    buscarDados();
+  }
+}
+
 async function buscarDados() {
-  setStatus('loading','Atualizando...');
+  const aba = ABAS[abaAtual];
+  setStatus('loading', 'Atualizando...');
   document.getElementById('erro-box').style.display = 'none';
   clearTimeout(timer);
 
   try {
-    const resp = await fetch(CSV_URL + '&t=' + Date.now(), { cache: 'no-store' });
-    if (!resp.ok) throw new Error(`Erro ${resp.status}: ${resp.statusText}`);
+    const resp = await fetch(aba.url + '&t=' + Date.now(), { cache: 'no-store' });
+    if (!resp.ok) throw new Error(`Erro ${resp.status}`);
     const text = await resp.text();
     const rows = parseCSV(text);
-    if (!rows.length) throw new Error('Planilha sem dados.');
+    if (!rows.length) throw new Error('Aba sem dados.');
 
     const headers = Object.keys(rows[0]);
     const empresaKey = headers.find(h => h.toLowerCase().includes('empresa')) || headers[1];
@@ -178,71 +226,79 @@ async function buscarDados() {
       .filter(r => String(r[empresaKey]||'').trim() !== '')
       .map(r => {
         const nome = String(r[empresaKey]||'').trim();
-        const etapas = ETAPAS_KEYS.map((k,i) => {
+        const etapas = aba.etapasKeys.map((k,i) => {
           const col = findCol(headers, k);
           const val = col ? String(r[col]||'').trim() : '';
-          return { label: ETAPAS_LABELS[i], val, done: isDone(val) };
+          return { label: aba.etapasLabels[i], val, done: isDone(val) };
         });
         const totalDone = etapas.filter(e => e.done).length;
-        return { nome, etapas, totalDone, pct: Math.round((totalDone/6)*100) };
+        return { nome, etapas, totalDone, pct: Math.round((totalDone / aba.etapasKeys.length) * 100) };
       });
 
+    cache[abaAtual] = empresas;
     const agora = new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
     setStatus('ok', `Atualizado às ${agora} · próximo em 30s`);
     document.getElementById('loading-area').style.display = 'none';
     document.getElementById('conteudo').style.display = 'block';
+
+    // Atualizar cabeçalho da tabela
+    document.getElementById('table-header').innerHTML =
+      `<span>Empresa</span>${aba.etapasLabels.map(l=>`<span>${l}</span>`).join('')}<span>Progresso</span><span>%</span>`;
+
     renderTudo();
 
   } catch(err) {
-    setStatus('erro','Erro ao carregar');
+    setStatus('erro', 'Erro ao carregar');
     document.getElementById('loading-area').style.display = 'none';
     const box = document.getElementById('erro-box');
     box.style.display = 'block';
-    box.innerHTML = `<strong>Não foi possível carregar a planilha.</strong><br>
-      ${err.message}<br><br>
-      Verifique se o Google Sheets está publicado em <b>Arquivo → Compartilhar → Publicar na web</b> como CSV.`;
+    box.innerHTML = `<strong>Não foi possível carregar a aba "${ABAS[abaAtual].nome}".</strong><br>${err.message}`;
   }
 
-  timer = setTimeout(buscarDados, INTERVALO);
+  timer = setTimeout(buscarDados, 30000);
 }
 
 function setStatus(tipo, txt) {
   document.getElementById('sync-txt').textContent = txt;
-  document.getElementById('dot').className = 'live-dot' + (tipo==='erro'?' erro':tipo==='loading'?' loading':'');
+  document.getElementById('dot').className = 'live-dot'+(tipo==='erro'?' erro':tipo==='loading'?' loading':'');
 }
 
 function renderTudo() { renderMetrics(); renderCharts(); renderTabela(); }
 
 function renderMetrics() {
+  const aba = ABAS[abaAtual];
+  const n = aba.etapasKeys.length;
   const total = empresas.length;
-  const fechadas = empresas.filter(e=>e.totalDone===6).length;
-  const andamento = empresas.filter(e=>e.totalDone>0&&e.totalDone<6).length;
+  const fechadas = empresas.filter(e=>e.totalDone===n).length;
+  const andamento = empresas.filter(e=>e.totalDone>0&&e.totalDone<n).length;
   const pendentes = empresas.filter(e=>e.totalDone===0).length;
   const totalEt = empresas.reduce((s,e)=>s+e.totalDone,0);
   document.getElementById('v-total').textContent = total;
   document.getElementById('v-fechadas').textContent = fechadas;
   document.getElementById('v-andamento').textContent = andamento;
   document.getElementById('v-pendentes').textContent = pendentes;
-  document.getElementById('v-etapas').textContent = `${totalEt}/${total*6}`;
+  document.getElementById('v-etapas').textContent = `${totalEt}/${total*n}`;
 }
 
 function renderCharts() {
+  const aba = ABAS[abaAtual];
+  const n = aba.etapasKeys.length;
   const total = empresas.length;
-  const porEtapa = ETAPAS_KEYS.map((_,i)=>empresas.filter(e=>e.etapas[i]?.done).length);
-  const fechadas = empresas.filter(e=>e.totalDone===6).length;
-  const andamento = empresas.filter(e=>e.totalDone>0&&e.totalDone<6).length;
+  const porEtapa = aba.etapasLabels.map((_,i)=>empresas.filter(e=>e.etapas[i]?.done).length);
+  const fechadas = empresas.filter(e=>e.totalDone===n).length;
+  const andamento = empresas.filter(e=>e.totalDone>0&&e.totalDone<n).length;
   const pendentes = empresas.filter(e=>e.totalDone===0).length;
 
   if (barChart) barChart.destroy();
   barChart = new Chart(document.getElementById('barEtapas'),{
     type:'bar',
-    data:{labels:ETAPAS_LABELS,datasets:[
+    data:{labels:aba.etapasLabels,datasets:[
       {label:'Concluídas',data:porEtapa,backgroundColor:'#1D9E75'},
       {label:'Pendentes',data:porEtapa.map(v=>total-v),backgroundColor:'#F0F0EE'}
     ]},
     options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false}},
-      scales:{x:{stacked:true,max:total},y:{stacked:true,ticks:{font:{size:11}}}}}
+      scales:{x:{stacked:true,max:total||1},y:{stacked:true,ticks:{font:{size:11}}}}}
   });
 
   if (pieChart) pieChart.destroy();
@@ -256,20 +312,26 @@ function renderCharts() {
 }
 
 function renderTabela() {
+  const aba = ABAS[abaAtual];
+  const n = aba.etapasKeys.length;
   const busca = document.getElementById('search').value.toLowerCase();
   let lista = empresas.filter(e=>e.nome.toLowerCase().includes(busca));
-  if (filtroAtual==='fechadas') lista=lista.filter(e=>e.totalDone===6);
-  else if (filtroAtual==='andamento') lista=lista.filter(e=>e.totalDone>0&&e.totalDone<6);
+  if (filtroAtual==='fechadas') lista=lista.filter(e=>e.totalDone===n);
+  else if (filtroAtual==='andamento') lista=lista.filter(e=>e.totalDone>0&&e.totalDone<n);
   else if (filtroAtual==='pendentes') lista=lista.filter(e=>e.totalDone===0);
+
   document.getElementById('result-count').textContent=`${lista.length} empresa${lista.length!==1?'s':''}`;
   const cor=p=>p===100?'#1D9E75':p===0?'#E24B4A':'#E9A82B';
-  document.getElementById('table-body').innerHTML=lista.map(e=>`
-    <div class="table-row">
-      <span class="empresa-name" title="${e.nome}">${e.nome}</span>
-      ${e.etapas.map(et=>`<span class="step-badge ${et.done?'step-ok':'step-pend'}" title="${et.done?et.val:'Pendente'}">${et.done?(et.val.length>5?et.val.slice(0,4)+'…':et.val):'—'}</span>`).join('')}
-      <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${e.pct}%;background:${cor(e.pct)}"></div></div>
-      <span class="pct-text" style="color:${cor(e.pct)}">${e.pct}%</span>
-    </div>`).join('');
+
+  document.getElementById('table-body').innerHTML = lista.length
+    ? lista.map(e=>`
+      <div class="table-row">
+        <span class="empresa-name" title="${e.nome}">${e.nome}</span>
+        ${e.etapas.map(et=>`<span class="step-badge ${et.done?'step-ok':'step-pend'}" title="${et.done?et.val:'Pendente'}">${et.done?(et.val.length>5?et.val.slice(0,4)+'…':et.val):'—'}</span>`).join('')}
+        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${e.pct}%;background:${cor(e.pct)}"></div></div>
+        <span class="pct-text" style="color:${cor(e.pct)}">${e.pct}%</span>
+      </div>`).join('')
+    : '<div style="padding:2rem;text-align:center;color:#aaa;font-size:13px">Nenhuma empresa encontrada</div>';
 }
 
 function setFiltro(f,btn){
