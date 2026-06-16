@@ -19,10 +19,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .btn-refresh:hover{background:#F0FAF6;border-color:#1D9E75;color:#1D9E75}
 
 /* Abas */
-.tabs{background:#fff;border-bottom:1px solid #EBEBEB;padding:0 2rem;display:flex;gap:4px;overflow-x:auto}
-.tab-btn{padding:14px 20px;font-size:13px;font-weight:500;color:#888;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .15s}
-.tab-btn:hover{color:#1a1a1a}
-.tab-btn.active{color:#1D9E75;border-bottom-color:#1D9E75}
+.tabs{background:#fff;border-bottom:1px solid #EBEBEB;padding:0 2rem;display:flex;align-items:center;gap:4px}
+.dropdown-wrap{position:relative}
+.dropdown-btn{display:flex;align-items:center;gap:8px;padding:12px 16px;font-size:14px;font-weight:500;color:#1a1a1a;border:none;background:none;cursor:pointer;border-bottom:2px solid #1D9E75;white-space:nowrap}
+.dropdown-btn .arrow{font-size:11px;color:#888;transition:transform .2s}
+.dropdown-btn.open .arrow{transform:rotate(180deg)}
+.dropdown-menu{display:none;position:absolute;top:100%;left:0;background:#fff;border:1px solid #EBEBEB;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.08);min-width:220px;z-index:100;padding:6px;margin-top:4px}
+.dropdown-menu.open{display:block}
+.dropdown-menu button{display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;color:#444;border:none;background:none;cursor:pointer;border-radius:7px;transition:background .15s}
+.dropdown-menu button:hover{background:#F0FAF6;color:#1D9E75}
+.dropdown-menu button.active{background:#EAF3DE;color:#1D9E75;font-weight:500}
 
 .main{max-width:1100px;margin:0 auto;padding:2rem}
 .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:2rem}
@@ -69,17 +75,24 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 <div class="topbar">
   <div>
-    <div class="topbar-title">Dashboard — Folha de Pagamento</div>
+    <div class="topbar-title">Departamento Pessoal</div>
     <div class="topbar-sync"><span class="live-dot" id="dot"></span><span id="sync-txt">Carregando...</span></div>
   </div>
   <button class="btn-refresh" onclick="buscarDados()">↻ Atualizar agora</button>
 </div>
 
 <div class="tabs">
-  <button class="tab-btn active" onclick="trocarAba(0,this)">📋 Fechamento de Folha</button>
-  <button class="tab-btn" onclick="trocarAba(1,this)">📄 Sem Lançamento</button>
-  <button class="tab-btn" onclick="trocarAba(2,this)">💼 Pró-labore</button>
-  <button class="tab-btn" onclick="trocarAba(3,this)">🏠 Doméstica</button>
+  <div class="dropdown-wrap">
+    <button class="dropdown-btn" onclick="toggleMenu()" id="dropdown-btn">
+      📋 <span id="aba-nome">Fechamento de Folha</span> <span class="arrow" id="arrow">▾</span>
+    </button>
+    <div class="dropdown-menu" id="dropdown-menu">
+      <button onclick="trocarAba(0,this)">📋 Fechamento de Folha</button>
+      <button onclick="trocarAba(1,this)">📄 Sem Lançamento</button>
+      <button onclick="trocarAba(2,this)">💼 Pró-labore</button>
+      <button onclick="trocarAba(3,this)">🏠 Doméstica</button>
+    </div>
+  </div>
 </div>
 
 <div class="main">
@@ -189,10 +202,34 @@ function findCol(headers, target) {
   return headers.find(h => h && h.toLowerCase().replace(/[^a-z0-9]/g,'').startsWith(t.slice(0,6))) || null;
 }
 
+const ICONES = ['📋','📄','💼','🏠'];
+
+function toggleMenu() {
+  const menu = document.getElementById('dropdown-menu');
+  const btn = document.getElementById('dropdown-btn');
+  menu.classList.toggle('open');
+  btn.classList.toggle('open');
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.dropdown-wrap')) {
+    document.getElementById('dropdown-menu').classList.remove('open');
+    document.getElementById('dropdown-btn').classList.remove('open');
+  }
+});
+
 function trocarAba(idx, btn) {
   abaAtual = idx;
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  // Atualizar label do botão
+  document.getElementById('aba-nome').textContent = ABAS[idx].nome;
+  document.getElementById('dropdown-btn').childNodes[0].textContent = ICONES[idx] + ' ';
+  // Marcar ativo no menu
+  document.querySelectorAll('.dropdown-menu button').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
+  // Fechar menu
+  document.getElementById('dropdown-menu').classList.remove('open');
+  document.getElementById('dropdown-btn').classList.remove('open');
+
   filtroAtual = 'todas';
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.filter-btn')[0].classList.add('active');
