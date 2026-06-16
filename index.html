@@ -220,7 +220,10 @@ async function buscarDados() {
     if (!rows.length) throw new Error('Aba sem dados.');
 
     const headers = Object.keys(rows[0]);
-    const empresaKey = headers.find(h => h.toLowerCase().includes('empresa')) || headers[1];
+    const isDomestica = abaAtual === 3;
+    const empresaKey = isDomestica
+      ? (headers.find(h => h.toLowerCase().includes('domestic')) || headers[1])
+      : (headers.find(h => h.toLowerCase().includes('empresa')) || headers[1]);
 
     empresas = rows
       .filter(r => String(r[empresaKey]||'').trim() !== '')
