@@ -69,6 +69,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .loading-msg{text-align:center;padding:3rem;color:#888;font-size:14px}
 .spinner{display:inline-block;width:18px;height:18px;border:2px solid #EEE;border-top-color:#1D9E75;border-radius:50%;animation:spin .8s linear infinite;margin-right:8px;vertical-align:middle}
 @keyframes spin{to{transform:rotate(360deg)}}
+
+@media print {
+  .topbar,.tabs,.search-row,.filters,.btn-refresh { display:none !important }
+  .main { padding:0 !important }
+  .pdf-page { page-break-after: always }
+  .pdf-header { margin-bottom:1rem }
+}
 </style>
 </head>
 <body>
@@ -78,7 +85,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="topbar-title">Departamento Pessoal</div>
     <div class="topbar-sync"><span class="live-dot" id="dot"></span><span id="sync-txt">Carregando...</span></div>
   </div>
-  <button class="btn-refresh" onclick="buscarDados()">↻ Atualizar agora</button>
+  <div style="display:flex;gap:8px">
+    <button class="btn-refresh" onclick="gerarPDF()">📄 Salvar Relatório PDF</button>
+    <button class="btn-refresh" onclick="buscarDados()">↻ Atualizar agora</button>
+  </div>
 </div>
 
 <div class="tabs">
@@ -241,6 +251,109 @@ function trocarAba(idx, btn) {
   } else {
     buscarDados();
   }
+}
+
+async function gerarPDF() {
+  const btn = document.querySelector('[onclick="gerarPDF()"]');
+  btn.textContent = '⏳ Gerando...';
+  btn.disabled = true;
+
+  // Buscar todas as abas que ainda não foram carregadas
+  const abaOriginal = abaAtual;
+  for (let i = 0; i < ABAS.length; i++) {
+    if (!cache[i]) {
+      abaAtual = i;
+      try {
+        const aba = ABAS[i];
+        const resp = await fetch(aba.url + '&t=' + Date.now(), { cache: 'no-store' });
+        const text = await resp.text();
+        const rows = parseCSV(text);
+        if (rows.length) {
+          const headers = Object.keys(rows[0]);
+          const isDom = i === 3;
+          const empresaKey = isDom
+            ? (headers.find(h => h.toUpperCase() === 'DOMESTICOS') || headers[1])
+            : (headers.find(h => h.toLowerCase().includes('empresa')) || headers[1]);
+          cache[i] = rows
+            .filter(r => String(r[empresaKey]||'').trim() !== '')
+            .map(r => {
+              const nome = String(r[empresaKey]||'').trim();
+              const etapas = aba.etapasKeys.map((k,j) => {
+                const col = findCol(headers, k);
+                const val = col ? String(r[col]||'').trim() : '';
+                return { label: aba.etapasLabels[j], val, done: isDone(val) };
+              });
+              const totalDone = etapas.filter(e => e.done).length;
+              return { nome, etapas, totalDone, pct: Math.round((totalDone/aba.etapasKeys.length)*100) };
+            });
+        }
+      } catch(e) { cache[i] = []; }
+    }
+  }
+  abaAtual = abaOriginal;
+
+  // Montar HTML do PDF
+  const mes = new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  const cor = p => p===100?'#1D9E75':p===0?'#E24B4A':'#E9A82B';
+
+  let html = `
+    <html><head><meta charset="UTF-8">
+    <style>
+      body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1a1a1a;padding:20px;font-size:12px}
+      h1{font-size:18px;font-weight:600;color:#1D5C8B;margin-bottom:4px}
+      .sub{font-size:12px;color:#888;margin-bottom:24px}
+      h2{font-size:13px;font-weight:600;color:#1a1a1a;margin:20px 0 8px;padding-bottom:4px;border-bottom:2px solid #1D9E75}
+      .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+      .m{background:#F5F5F3;border-radius:8px;padding:10px;text-align:center}
+      .m-label{font-size:10px;color:#888;margin-bottom:4px}
+      .m-val{font-size:18px;font-weight:600}
+      table{width:100%;border-collapse:collapse;margin-bottom:8px}
+      th{background:#1D5C8B;color:#fff;padding:6px 8px;text-align:left;font-size:10px;font-weight:600}
+      td{padding:5px 8px;border-bottom:1px solid #EBEBEB;font-size:11px}
+      tr:nth-child(even) td{background:#F9F9F9}
+      .badge{padding:2px 8px;border-radius:4px;font-size:10px;font-weight:500}
+      .ok{background:#EAF3DE;color:#27500A}
+      .pend{background:#F5F5F3;color:#aaa}
+      .pct{font-weight:600}
+      .page-break{page-break-after:always}
+    </style></head><body>`;
+
+  html += `<h1>Relatório Mensal — Departamento Pessoal</h1><div class="sub">Competência: ${mes} &nbsp;·&nbsp; Gerado em ${new Date().toLocaleString('pt-BR')}</div>`;
+
+  for (let i = 0; i < ABAS.length; i++) {
+    const aba = ABAS[i];
+    const dados = cache[i] || [];
+    const n = aba.etapasKeys.length;
+    const fechadas = dados.filter(e=>e.totalDone===n).length;
+    const andamento = dados.filter(e=>e.totalDone>0&&e.totalDone<n).length;
+    const pendentes = dados.filter(e=>e.totalDone===0).length;
+
+    html += `<h2>${aba.nome}</h2>`;
+    html += `<div class="metrics">
+      <div class="m"><div class="m-label">Total</div><div class="m-val">${dados.length}</div></div>
+      <div class="m"><div class="m-label">100% Fechadas</div><div class="m-val" style="color:#1D9E75">${fechadas}</div></div>
+      <div class="m"><div class="m-label">Em andamento</div><div class="m-val" style="color:#C07F0A">${andamento}</div></div>
+      <div class="m"><div class="m-label">Sem início</div><div class="m-val" style="color:#A32D2D">${pendentes}</div></div>
+    </div>`;
+
+    html += `<table><tr><th>Empresa</th>${aba.etapasLabels.map(l=>`<th>${l}</th>`).join('')}<th>%</th></tr>`;
+    dados.forEach(e => {
+      const c = cor(e.pct);
+      html += `<tr><td>${e.nome}</td>${e.etapas.map(et=>`<td><span class="badge ${et.done?'ok':'pend'}">${et.done?et.val:'—'}</span></td>`).join('')}<td class="pct" style="color:${c}">${e.pct}%</td></tr>`;
+    });
+    html += `</table>`;
+    if (i < ABAS.length - 1) html += `<div class="page-break"></div>`;
+  }
+
+  html += `</body></html>`;
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  setTimeout(() => { win.print(); }, 800);
+
+  btn.textContent = '📄 Salvar Relatório PDF';
+  btn.disabled = false;
 }
 
 async function buscarDados() {
