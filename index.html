@@ -29,6 +29,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .dropdown-menu button{display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;color:#444;border:none;background:none;cursor:pointer;border-radius:7px;transition:background .15s}
 .dropdown-menu button:hover{background:#F0FAF6;color:#1D9E75}
 .dropdown-menu button.active{background:#EAF3DE;color:#1D9E75;font-weight:500}
+.menu-divider{height:1px;background:#EBEBEB;margin:6px 0}
+.menu-group-label{font-size:10px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.08em;padding:6px 14px 2px}
 
 .main{max-width:1100px;margin:0 auto;padding:2rem}
 .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:2rem}
@@ -97,10 +99,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       📋 <span id="aba-nome">Fechamento de Folha</span> <span class="arrow" id="arrow">▾</span>
     </button>
     <div class="dropdown-menu" id="dropdown-menu">
+      <optgroup label="Departamento Pessoal">
       <button onclick="trocarAba(0,this)">📋 Fechamento de Folha</button>
       <button onclick="trocarAba(1,this)">📄 Sem Lançamento</button>
       <button onclick="trocarAba(2,this)">💼 Pró-labore</button>
       <button onclick="trocarAba(3,this)">🏠 Doméstica</button>
+      </optgroup>
+      <div class="menu-divider"></div>
+      <div class="menu-group-label">Fiscal</div>
+      <button onclick="trocarAba(4,this)">📊 Michelle</button>
+      <button onclick="trocarAba(5,this)">📊 Suzana</button>
+      <button onclick="trocarAba(6,this)">📊 Valdir</button>
     </div>
   </div>
 </div>
@@ -174,7 +183,23 @@ const ABAS = [
     nome: 'Doméstica',
     url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ67WDRR9xAC8clG6QgrtsHu8wQQmhStAzaDnCHimjJA7A96KK0icXOXeuCgZLOz9x2j8XP6cRRibka/pub?gid=0&single=true&output=csv',
     etapasKeys: ['FOLHA','ESOCIAL','ENVIADO'],
-    etapasLabels: ['Folha','eSocial','Enviado']
+    etapasLabels: ['Folha','eSocial','Enviado'],
+    fiscal: false
+  },
+  {
+    nome: 'Michelle',
+    url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSrBZox6eF7Lna68lp4TVqZAooMIzhRt0FBNWpprnYy7N_TvWnJyDfAz_plkCsXL9jQwCn2Qky6g3wX/pub?gid=1673362838&single=true&output=csv',
+    fiscal: true
+  },
+  {
+    nome: 'Suzana',
+    url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSrBZox6eF7Lna68lp4TVqZAooMIzhRt0FBNWpprnYy7N_TvWnJyDfAz_plkCsXL9jQwCn2Qky6g3wX/pub?gid=1712397923&single=true&output=csv',
+    fiscal: true
+  },
+  {
+    nome: 'Valdir',
+    url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSrBZox6eF7Lna68lp4TVqZAooMIzhRt0FBNWpprnYy7N_TvWnJyDfAz_plkCsXL9jQwCn2Qky6g3wX/pub?gid=1038517996&single=true&output=csv',
+    fiscal: true
   }
 ];
 
@@ -212,7 +237,7 @@ function findCol(headers, target) {
   return headers.find(h => h && h.toLowerCase().replace(/[^a-z0-9]/g,'').startsWith(t.slice(0,6))) || null;
 }
 
-const ICONES = ['📋','📄','💼','🏠'];
+const ICONES = ['📋','📄','💼','🏠','📊','📊','📊'];
 
 function toggleMenu() {
   const menu = document.getElementById('dropdown-menu');
@@ -356,6 +381,54 @@ async function gerarPDF() {
   btn.disabled = false;
 }
 
+
+const FISCAL_GRUPOS = {
+  'SIMPLES': { label:'Simples Nacional', etapas:['XML','Apuração','DAS','DeSTDA','Enviado'], cor:'#1D6B3A' },
+  'PRESUMIDO': { label:'Lucro Presumido', etapas:['XML','Apuração','IRPJ','CSLL','PIS','COFINS','Enviado'], cor:'#1D3D8B' },
+  'REAL': { label:'Lucro Real', etapas:['XML','Apuração','IRPJ','CSLL','PIS','COFINS','Enviado'], cor:'#6B1D1D' },
+  'OUTROS': { label:'Outros', etapas:['XML','Apuração','Guia','Enviado'], cor:'#444' },
+};
+
+function getTipoKey(tipo) {
+  const t = (tipo||'').toUpperCase();
+  if (t.includes('REAL')) return 'REAL';
+  if (t.includes('PRESUMIDO')) return 'PRESUMIDO';
+  if (t.includes('SIMPLES')) return 'SIMPLES';
+  return 'OUTROS';
+}
+
+function parseFiscal(rows, headers) {
+  const nomeKey = headers.find(h => h.toLowerCase().includes('empresa')) || headers[1];
+  const tipoKey = headers.find(h => h.toLowerCase().includes('tipo')) || null;
+  const etapasKeyMap = {
+    'XML': headers.find(h => h.toLowerCase().includes('xml')),
+    'Apuração': headers.find(h => h.toLowerCase().includes('apura')),
+    'DAS': headers.find(h => h.toLowerCase() === 'das'),
+    'DeSTDA': headers.find(h => h.toLowerCase().includes('destda')),
+    'IRPJ': headers.find(h => h.toLowerCase().includes('irpj')),
+    'CSLL': headers.find(h => h.toLowerCase().includes('csll')),
+    'PIS': headers.find(h => h.toLowerCase() === 'pis'),
+    'COFINS': headers.find(h => h.toLowerCase().includes('cofins')),
+    'Enviado': headers.find(h => h.toLowerCase().includes('envia')),
+  };
+
+  return rows
+    .filter(r => String(r[nomeKey]||'').trim() !== '' && String(r[nomeKey]||'').trim() !== 'Empresa')
+    .map(r => {
+      const nome = String(r[nomeKey]||'').trim();
+      const tipoRaw = tipoKey ? String(r[tipoKey]||'').trim() : '';
+      const tipoK = getTipoKey(tipoRaw);
+      const grupo = FISCAL_GRUPOS[tipoK];
+      const etapas = grupo.etapas.map(label => {
+        const col = etapasKeyMap[label];
+        const val = col ? String(r[col]||'').trim() : '';
+        return { label, val, done: isDone(val) };
+      });
+      const totalDone = etapas.filter(e => e.done).length;
+      return { nome, etapas, totalDone, pct: Math.round((totalDone/grupo.etapas.length)*100), tipo: tipoK, tipoLabel: grupo.label, tipoCor: grupo.cor };
+    });
+}
+
 async function buscarDados() {
   const aba = ABAS[abaAtual];
   setStatus('loading', 'Atualizando...');
@@ -371,22 +444,29 @@ async function buscarDados() {
 
     const headers = Object.keys(rows[0]);
     const isDomestica = abaAtual === 3;
-    const empresaKey = isDomestica
-      ? (headers.find(h => h.toUpperCase() === 'DOMESTICOS') || headers[1])
-      : (headers.find(h => h.toLowerCase().includes('empresa')) || headers[1]);
+    const isFiscal = aba.fiscal === true;
 
-    empresas = rows
-      .filter(r => String(r[empresaKey]||'').trim() !== '')
-      .map(r => {
-        const nome = String(r[empresaKey]||'').trim();
-        const etapas = aba.etapasKeys.map((k,i) => {
-          const col = findCol(headers, k);
-          const val = col ? String(r[col]||'').trim() : '';
-          return { label: aba.etapasLabels[i], val, done: isDone(val) };
+    if (isFiscal) {
+      // Modo fiscal: agrupa por tipo, etapas diferentes por grupo
+      empresas = parseFiscal(rows, headers);
+    } else {
+      const empresaKey = isDomestica
+        ? (headers.find(h => h.toUpperCase() === 'DOMESTICOS') || headers[1])
+        : (headers.find(h => h.toLowerCase().includes('empresa')) || headers[1]);
+
+      empresas = rows
+        .filter(r => String(r[empresaKey]||'').trim() !== '')
+        .map(r => {
+          const nome = String(r[empresaKey]||'').trim();
+          const etapas = aba.etapasKeys.map((k,i) => {
+            const col = findCol(headers, k);
+            const val = col ? String(r[col]||'').trim() : '';
+            return { label: aba.etapasLabels[i], val, done: isDone(val) };
+          });
+          const totalDone = etapas.filter(e => e.done).length;
+          return { nome, etapas, totalDone, pct: Math.round((totalDone / aba.etapasKeys.length) * 100) };
         });
-        const totalDone = etapas.filter(e => e.done).length;
-        return { nome, etapas, totalDone, pct: Math.round((totalDone / aba.etapasKeys.length) * 100) };
-      });
+    }
 
     cache[abaAtual] = empresas;
     const agora = new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
@@ -475,16 +555,49 @@ function renderTabela() {
 
   document.getElementById('result-count').textContent=`${lista.length} empresa${lista.length!==1?'s':''}`;
   const cor=p=>p===100?'#1D9E75':p===0?'#E24B4A':'#E9A82B';
+  const isFiscal = ABAS[abaAtual].fiscal === true;
 
-  document.getElementById('table-body').innerHTML = lista.length
-    ? lista.map(e=>`
-      <div class="table-row">
-        <span class="empresa-name" title="${e.nome}">${e.nome}</span>
-        ${e.etapas.map(et=>`<span class="step-badge ${et.done?'step-ok':'step-pend'}" title="${et.done?et.val:'Pendente'}">${et.done?(et.val.length>5?et.val.slice(0,4)+'…':et.val):'—'}</span>`).join('')}
-        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${e.pct}%;background:${cor(e.pct)}"></div></div>
-        <span class="pct-text" style="color:${cor(e.pct)}">${e.pct}%</span>
-      </div>`).join('')
-    : '<div style="padding:2rem;text-align:center;color:#aaa;font-size:13px">Nenhuma empresa encontrada</div>';
+  if (isFiscal) {
+    // Agrupar por tipo
+    const grupos = {};
+    lista.forEach(e => {
+      if (!grupos[e.tipoLabel]) grupos[e.tipoLabel] = [];
+      grupos[e.tipoLabel].push(e);
+    });
+    const ordemGrupos = ['Simples Nacional','Lucro Presumido','Lucro Real','Outros'];
+    let html = '';
+    ordemGrupos.forEach(g => {
+      if (!grupos[g]) return;
+      const emps = grupos[g];
+      const maxEtapas = Math.max(...emps.map(e=>e.etapas.length));
+      const etapaLabels = emps[0].etapas.map(e=>e.label);
+      const corGrupo = emps[0].tipoCor;
+      html += `<div style="background:${corGrupo}12;border-left:3px solid ${corGrupo};padding:6px 16px;font-size:11px;font-weight:600;color:${corGrupo};letter-spacing:.05em;text-transform:uppercase">${g} — ${emps.length} empresa${emps.length!==1?'s':''}</div>`;
+      html += `<div style="display:grid;grid-template-columns:2fr ${etapaLabels.map(()=>'1fr').join(' ')} 80px 50px;gap:6px;padding:6px 16px;background:#FAFAFA;border-bottom:1px solid #EBEBEB;font-size:10px;font-weight:600;color:#888;text-transform:uppercase">
+        <span>Empresa</span>${etapaLabels.map(l=>`<span>${l}</span>`).join('')}<span>Progresso</span><span>%</span></div>`;
+      emps.forEach(e => {
+        html += `<div class="table-row" style="grid-template-columns:2fr ${e.etapas.map(()=>'1fr').join(' ')} 80px 50px">
+          <span class="empresa-name" title="${e.nome}">${e.nome}</span>
+          ${e.etapas.map(et=>`<span class="step-badge ${et.done?'step-ok':'step-pend'}">${et.done?(et.val.length>5?et.val.slice(0,4)+'…':et.val):'—'}</span>`).join('')}
+          <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${e.pct}%;background:${cor(e.pct)}"></div></div>
+          <span class="pct-text" style="color:${cor(e.pct)}">${e.pct}%</span>
+        </div>`;
+      });
+    });
+    document.getElementById('table-body').innerHTML = html || '<div style="padding:2rem;text-align:center;color:#aaa;font-size:13px">Nenhuma empresa encontrada</div>';
+    document.getElementById('table-header').style.display = 'none';
+  } else {
+    document.getElementById('table-header').style.display = '';
+    document.getElementById('table-body').innerHTML = lista.length
+      ? lista.map(e=>`
+        <div class="table-row">
+          <span class="empresa-name" title="${e.nome}">${e.nome}</span>
+          ${e.etapas.map(et=>`<span class="step-badge ${et.done?'step-ok':'step-pend'}" title="${et.done?et.val:'Pendente'}">${et.done?(et.val.length>5?et.val.slice(0,4)+'…':et.val):'—'}</span>`).join('')}
+          <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${e.pct}%;background:${cor(e.pct)}"></div></div>
+          <span class="pct-text" style="color:${cor(e.pct)}">${e.pct}%</span>
+        </div>`).join('')
+      : '<div style="padding:2rem;text-align:center;color:#aaa;font-size:13px">Nenhuma empresa encontrada</div>';
+  }
 }
 
 function setFiltro(f,btn){
