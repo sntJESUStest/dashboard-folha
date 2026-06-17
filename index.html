@@ -572,17 +572,20 @@ function renderTudo() { renderMetrics(); renderCharts(); renderTabela(); }
 
 function renderMetrics() {
   const aba = ABAS[abaAtual];
-  const n = aba.etapasKeys.length;
+  const isFiscal = aba.fiscal === true;
   const total = empresas.length;
-  const fechadas = empresas.filter(e=>e.totalDone===n).length;
-  const andamento = empresas.filter(e=>e.totalDone>0&&e.totalDone<n).length;
-  const pendentes = empresas.filter(e=>e.totalDone===0).length;
+  const fechadas = empresas.filter(e=>e.pct===100).length;
+  const andamento = empresas.filter(e=>e.pct>0&&e.pct<100).length;
+  const pendentes = empresas.filter(e=>e.pct===0).length;
   const totalEt = empresas.reduce((s,e)=>s+e.totalDone,0);
+  const maxEt = isFiscal
+    ? empresas.reduce((s,e)=>s+e.etapas.length,0)
+    : total*(aba.etapasKeys||[]).length;
   document.getElementById('v-total').textContent = total;
   document.getElementById('v-fechadas').textContent = fechadas;
   document.getElementById('v-andamento').textContent = andamento;
   document.getElementById('v-pendentes').textContent = pendentes;
-  document.getElementById('v-etapas').textContent = `${totalEt}/${total*n}`;
+  document.getElementById('v-etapas').textContent = `${totalEt}/${maxEt}`;
 }
 
 function renderCharts() {
@@ -621,9 +624,9 @@ function renderTabela() {
   const n = aba.etapasKeys.length;
   const busca = document.getElementById('search').value.toLowerCase();
   let lista = empresas.filter(e=>e.nome.toLowerCase().includes(busca));
-  if (filtroAtual==='fechadas') lista=lista.filter(e=>e.totalDone===n);
-  else if (filtroAtual==='andamento') lista=lista.filter(e=>e.totalDone>0&&e.totalDone<n);
-  else if (filtroAtual==='pendentes') lista=lista.filter(e=>e.totalDone===0);
+  if (filtroAtual==='fechadas') lista=lista.filter(e=>e.pct===100);
+  else if (filtroAtual==='andamento') lista=lista.filter(e=>e.pct>0&&e.pct<100);
+  else if (filtroAtual==='pendentes') lista=lista.filter(e=>e.pct===0);
 
   document.getElementById('result-count').textContent=`${lista.length} empresa${lista.length!==1?'s':''}`;
   const cor=p=>p===100?'#1D9E75':p===0?'#E24B4A':'#E9A82B';
