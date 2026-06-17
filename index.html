@@ -396,36 +396,111 @@ function getTipoKey(tipo) {
   return 'OUTROS';
 }
 
-function parseFiscal(rows, headers) {
-  const nomeKey = headers.find(h => h.toLowerCase().includes('empresa')) || headers[1];
-  const tipoKey = headers.find(h => h.toLowerCase().includes('tipo')) || null;
-  const etapasKeyMap = {
-    'XML': headers.find(h => h.toLowerCase().includes('xml')),
-    'Apuração': headers.find(h => h.toLowerCase().includes('apura')),
-    'DAS': headers.find(h => h.toLowerCase() === 'das'),
-    'DeSTDA': headers.find(h => h.toLowerCase().includes('destda')),
-    'IRPJ': headers.find(h => h.toLowerCase().includes('irpj')),
-    'CSLL': headers.find(h => h.toLowerCase().includes('csll')),
-    'PIS': headers.find(h => h.toLowerCase() === 'pis'),
-    'COFINS': headers.find(h => h.toLowerCase().includes('cofins')),
-    'Enviado': headers.find(h => h.toLowerCase().includes('envia')),
-  };
+function parseFiscal(rawText) {
+  // Parsear CSV bruto para lidar com múltiplos cabeçalhos por tipo
+  const lines = rawText.trim().split('\n').map(l => l.trim()).filter(l => l);
+  
+  const resultado = [];
+  let tipoAtual = 'OUTROS';
+  let colHeaders = null;
+  let idxEmpresa = -1, idxXml = -1, idxApura = -1, idxDas = -1, idxDestda = -1,
+      idxIrpj = -1, idxCsll = -1, idxPis = -1, idxCofins = -1, idxEnviado = -1, idxObs = -1;
 
-  return rows
-    .filter(r => String(r[nomeKey]||'').trim() !== '' && String(r[nomeKey]||'').trim() !== 'Empresa')
-    .map(r => {
-      const nome = String(r[nomeKey]||'').trim();
-      const tipoRaw = tipoKey ? String(r[tipoKey]||'').trim() : '';
-      const tipoK = getTipoKey(tipoRaw);
-      const grupo = FISCAL_GRUPOS[tipoK];
-      const etapas = grupo.etapas.map(label => {
-        const col = etapasKeyMap[label];
-        const val = col ? String(r[col]||'').trim() : '';
-        return { label, val, done: isDone(val) };
-      });
-      const totalDone = etapas.filter(e => e.done).length;
-      return { nome, etapas, totalDone, pct: Math.round((totalDone/grupo.etapas.length)*100), tipo: tipoK, tipoLabel: grupo.label, tipoCor: grupo.cor };
+  function parseLine(line) {
+    const vals = []; let cur = '', inQ = false;
+    for (let c of line) {
+      if (c === '"') { inQ = !inQ; }
+      else if (c === ',' && !inQ) { vals.push(cur.trim()); cur = ''; }
+      else cur += c;
+    }
+    vals.push(cur.trim());
+    return vals;
+  }
+
+  function detectTipo(line) {
+    const u = line.toUpperCase();
+    if (u.includes('SIMPLES')) return 'SIMPLES';
+    if (u.includes('REAL')) return 'REAL';
+    if (u.includes('PRESUMIDO')) return 'PRESUMIDO';
+    if (u.includes('PESSOA')) return 'PF';
+    return null;
+  }
+
+  for (let line of lines) {
+    const vals = parseLine(line);
+    const first = (vals[0]||'').trim();
+
+    // Linha de título principal (ex: "FISCAL — MICHELLE")
+    if (first.toUpperCase().includes('FISCAL')) continue;
+
+    // Linha de grupo (ex: "SIMPLES NACIONAL (42 empresas)")
+    const tipo = detectTipo(first);
+    if (tipo && vals.filter(v=>v).length <= 3) {
+      tipoAtual = tipo;
+      colHeaders = null; // resetar cabeçalho para próximo grupo
+      continue;
+    }
+
+    // Linha de cabeçalho (ex: "Cód,Empresa,CNPJ,...")
+    if (first.toLowerCase() === 'cód' || first.toLowerCase() === 'cod') {
+      colHeaders = vals.map(v => v.trim().toLowerCase());
+      idxEmpresa  = colHeaders.findIndex(h => h.includes('empresa') || h.includes('nome'));
+      idxXml      = colHeaders.findIndex(h => h === 'xml');
+      idxApura    = colHeaders.findIndex(h => h.includes('apura'));
+      idxDas      = colHeaders.findIndex(h => h === 'das');
+      idxDestda   = colHeaders.findIndex(h => h.includes('destda'));
+      idxIrpj     = colHeaders.findIndex(h => h.includes('irpj'));
+      idxCsll     = colHeaders.findIndex(h => h.includes('csll'));
+      idxPis      = colHeaders.findIndex(h => h === 'pis');
+      idxCofins   = colHeaders.findIndex(h => h.includes('cofins'));
+      idxEnviado  = colHeaders.findIndex(h => h.includes('envia'));
+      idxObs      = colHeaders.findIndex(h => h.includes('observa'));
+      continue;
+    }
+
+    // Linha de dado
+    if (!colHeaders) continue;
+    const nome = idxEmpresa >= 0 ? (vals[idxEmpresa]||'').trim() : '';
+    if (!nome || nome === '') continue;
+
+    const grupo = FISCAL_GRUPOS[tipoAtual] || FISCAL_GRUPOS['OUTROS'];
+    const g = v => (v >= 0 ? (vals[v]||'').trim() : '');
+
+    let etapas = [];
+    if (tipoAtual === 'SIMPLES') {
+      etapas = [
+        {label:'XML',      val:g(idxXml),     done:isDone(g(idxXml))},
+        {label:'Apuração', val:g(idxApura),   done:isDone(g(idxApura))},
+        {label:'DAS',      val:g(idxDas),     done:isDone(g(idxDas))},
+        {label:'DeSTDA',   val:g(idxDestda),  done:isDone(g(idxDestda))},
+        {label:'Enviado',  val:g(idxEnviado), done:isDone(g(idxEnviado))},
+      ];
+    } else if (tipoAtual === 'PRESUMIDO' || tipoAtual === 'REAL') {
+      etapas = [
+        {label:'XML',      val:g(idxXml),     done:isDone(g(idxXml))},
+        {label:'Apuração', val:g(idxApura),   done:isDone(g(idxApura))},
+        {label:'IRPJ',     val:g(idxIrpj),    done:isDone(g(idxIrpj))},
+        {label:'CSLL',     val:g(idxCsll),    done:isDone(g(idxCsll))},
+        {label:'PIS',      val:g(idxPis),     done:isDone(g(idxPis))},
+        {label:'COFINS',   val:g(idxCofins),  done:isDone(g(idxCofins))},
+        {label:'Enviado',  val:g(idxEnviado), done:isDone(g(idxEnviado))},
+      ];
+    } else {
+      etapas = [
+        {label:'XML',      val:g(idxXml),     done:isDone(g(idxXml))},
+        {label:'Apuração', val:g(idxApura),   done:isDone(g(idxApura))},
+        {label:'Enviado',  val:g(idxEnviado), done:isDone(g(idxEnviado))},
+      ];
+    }
+
+    const totalDone = etapas.filter(e => e.done).length;
+    resultado.push({
+      nome, etapas, totalDone,
+      pct: Math.round((totalDone / etapas.length) * 100),
+      tipo: tipoAtual, tipoLabel: grupo.label, tipoCor: grupo.cor
     });
+  }
+  return resultado;
 }
 
 async function buscarDados() {
@@ -438,17 +513,15 @@ async function buscarDados() {
     const resp = await fetch(aba.url + '&t=' + Date.now(), { cache: 'no-store' });
     if (!resp.ok) throw new Error(`Erro ${resp.status}`);
     const text = await resp.text();
-    const rows = parseCSV(text);
-    if (!rows.length) throw new Error('Aba sem dados.');
-
-    const headers = Object.keys(rows[0]);
-    const isDomestica = abaAtual === 3;
     const isFiscal = aba.fiscal === true;
+    const isDomestica = abaAtual === 3;
 
     if (isFiscal) {
-      // Modo fiscal: agrupa por tipo, etapas diferentes por grupo
-      empresas = parseFiscal(rows, headers);
+      empresas = parseFiscal(text);
     } else {
+      const rows = parseCSV(text);
+      if (!rows.length) throw new Error('Aba sem dados.');
+      const headers = Object.keys(rows[0]);
       const empresaKey = isDomestica
         ? (headers.find(h => h.toUpperCase() === 'DOMESTICOS') || headers[1])
         : (headers.find(h => h.toLowerCase().includes('empresa')) || headers[1]);
