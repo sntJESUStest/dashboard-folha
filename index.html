@@ -3,45 +3,47 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard — Folha de Pagamento</title>
+<title>Dashboard — HP Contabilidade</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F5F5F3;color:#1a1a1a;min-height:100vh}
-.topbar{background:#fff;border-bottom:1px solid #EBEBEB;padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:10}
+.topbar{background:#fff;border-bottom:1px solid #EBEBEB;padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100}
+.topbar-left{display:flex;flex-direction:column;gap:2px}
 .topbar-title{font-size:15px;font-weight:500}
-.topbar-sync{font-size:11px;color:#888;display:flex;align-items:center;gap:6px;margin-top:2px}
+.topbar-sync{font-size:11px;color:#888;display:flex;align-items:center;gap:6px}
 .live-dot{width:7px;height:7px;border-radius:50%;background:#1D9E75;display:inline-block;animation:pulse 2s infinite}
 .live-dot.erro{background:#E24B4A;animation:none}
 .live-dot.loading{background:#E9A82B;animation:none}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
-.btn-refresh{font-size:12px;padding:6px 14px;border:1px solid #DDD;border-radius:8px;background:#fff;cursor:pointer;color:#555;transition:all .15s}
-.btn-refresh:hover{background:#F0FAF6;border-color:#1D9E75;color:#1D9E75}
+.topbar-btns{display:flex;gap:8px}
+.btn{font-size:12px;padding:6px 14px;border:1px solid #DDD;border-radius:8px;background:#fff;cursor:pointer;color:#555;transition:all .15s;white-space:nowrap}
+.btn:hover{background:#F0FAF6;border-color:#1D9E75;color:#1D9E75}
 
-/* Abas */
-.tabs{background:#fff;border-bottom:1px solid #EBEBEB;padding:0 2rem;display:flex;align-items:center;gap:4px}
+/* Dropdown */
 .dropdown-wrap{position:relative}
 .dropdown-btn{display:flex;align-items:center;gap:8px;padding:12px 16px;font-size:14px;font-weight:500;color:#1a1a1a;border:none;background:none;cursor:pointer;border-bottom:2px solid #1D9E75;white-space:nowrap}
-.dropdown-btn .arrow{font-size:11px;color:#888;transition:transform .2s}
+.arrow{font-size:11px;color:#888;transition:transform .2s;display:inline-block}
 .dropdown-btn.open .arrow{transform:rotate(180deg)}
-.dropdown-menu{display:none;position:absolute;top:100%;left:0;background:#fff;border:1px solid #EBEBEB;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.08);min-width:220px;z-index:100;padding:6px;margin-top:4px}
+.dropdown-menu{display:none;position:absolute;top:100%;left:0;background:#fff;border:1px solid #EBEBEB;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.1);min-width:230px;z-index:200;padding:6px;margin-top:4px}
 .dropdown-menu.open{display:block}
-.dropdown-menu button{display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;color:#444;border:none;background:none;cursor:pointer;border-radius:7px;transition:background .15s}
+.menu-divider{height:1px;background:#EBEBEB;margin:4px 0}
+.menu-label{font-size:10px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.08em;padding:6px 10px 2px}
+.dropdown-menu button{display:block;width:100%;text-align:left;padding:8px 12px;font-size:13px;color:#444;border:none;background:none;cursor:pointer;border-radius:7px;transition:background .15s}
 .dropdown-menu button:hover{background:#F0FAF6;color:#1D9E75}
 .dropdown-menu button.active{background:#EAF3DE;color:#1D9E75;font-weight:500}
-.menu-divider{height:1px;background:#EBEBEB;margin:6px 0}
-.menu-group-label{font-size:10px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.08em;padding:6px 14px 2px}
+.nav-bar{background:#fff;border-bottom:1px solid #EBEBEB;padding:0 2rem;display:flex;align-items:center;gap:4px;min-height:48px}
 
+/* Main */
 .main{max-width:1100px;margin:0 auto;padding:2rem}
 .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:2rem}
-.metric{background:#fff;border-radius:12px;padding:1.1rem 1.2rem;border-left:3px solid transparent}
+.metric{background:#fff;border-radius:12px;padding:1.1rem 1.2rem;border-left:3px solid #C8C8C4}
 .metric-label{font-size:12px;color:#888;margin-bottom:6px}
 .metric-value{font-size:26px;font-weight:500}
-.m-total{border-color:#C8C8C4}
-.m-fechadas{border-color:#1D9E75}.m-fechadas .metric-value{color:#1D9E75}
-.m-andamento{border-color:#E9A82B}.m-andamento .metric-value{color:#C07F0A}
-.m-pendentes{border-color:#E24B4A}.m-pendentes .metric-value{color:#A32D2D}
-.m-etapas{border-color:#534AB7}.m-etapas .metric-value{color:#534AB7}
+.m-verde .metric-value{color:#1D9E75}.m-verde{border-color:#1D9E75}
+.m-ambar .metric-value{color:#C07F0A}.m-ambar{border-color:#E9A82B}
+.m-verme .metric-value{color:#A32D2D}.m-verme{border-color:#E24B4A}
+.m-roxo .metric-value{color:#534AB7}.m-roxo{border-color:#534AB7}
 .charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:2rem}
 .chart-card{background:#fff;border-radius:12px;padding:1.2rem 1.4rem}
 .card-title{font-size:12px;font-weight:600;color:#888;margin-bottom:1rem;text-transform:uppercase;letter-spacing:.05em}
@@ -54,58 +56,53 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .filter-btn:hover{border-color:#1D9E75;color:#1D9E75}
 .filter-btn.active{background:#1D9E75;border-color:#1D9E75;color:#fff;font-weight:500}
 .result-count{font-size:12px;color:#888;white-space:nowrap}
-.table-card{background:#fff;border-radius:12px;overflow:hidden}
-.table-header{display:grid;padding:10px 16px;background:#FAFAFA;border-bottom:1px solid #EBEBEB;font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.06em;grid-template-columns:2fr repeat(6,1fr) 80px 50px;gap:6px;align-items:center}
-.table-body{max-height:420px;overflow-y:auto}
-.table-row{display:grid;padding:8px 16px;border-bottom:1px solid #F0F0F0;grid-template-columns:2fr repeat(6,1fr) 80px 50px;gap:6px;align-items:center;font-size:12px;transition:background .1s}
+.table-card{background:#fff;border-radius:12px;overflow:hidden;margin-bottom:1rem}
+.table-header{display:grid;padding:10px 16px;background:#FAFAFA;border-bottom:1px solid #EBEBEB;font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.06em;gap:6px;align-items:center}
+.table-body{max-height:450px;overflow-y:auto}
+.table-row{display:grid;padding:8px 16px;border-bottom:1px solid #F0F0F0;gap:6px;align-items:center;font-size:12px;transition:background .1s}
 .table-row:hover{background:#FAFAFA}
 .table-row:last-child{border-bottom:none}
 .empresa-name{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px}
-.step-badge{font-size:10px;padding:3px 6px;border-radius:6px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.step-badge{font-size:10px;padding:2px 6px;border-radius:6px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .step-ok{background:#EAF3DE;color:#27500A}
 .step-pend{background:#F5F5F3;color:#bbb}
-.progress-bar-bg{background:#EEE;border-radius:4px;height:6px;overflow:hidden}
-.progress-bar-fill{height:100%;border-radius:4px;transition:width .4s}
-.pct-text{font-size:11px;font-weight:500;text-align:right}
-.erro-box{background:#FFF5F5;border:1px solid #FCC;border-radius:12px;padding:1.5rem;margin-bottom:1rem;font-size:13px;color:#A32D2D;display:none;line-height:1.6}
+.prog-bg{background:#EEE;border-radius:4px;height:6px;overflow:hidden}
+.prog-fill{height:100%;border-radius:4px;transition:width .4s}
+.pct-txt{font-size:11px;font-weight:500;text-align:right}
+.group-header{padding:8px 16px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid #EBEBEB}
+.erro-box{background:#FFF5F5;border:1px solid #FCC;border-radius:12px;padding:1.5rem;margin-bottom:1rem;font-size:13px;color:#A32D2D;line-height:1.6;display:none}
 .loading-msg{text-align:center;padding:3rem;color:#888;font-size:14px}
 .spinner{display:inline-block;width:18px;height:18px;border:2px solid #EEE;border-top-color:#1D9E75;border-radius:50%;animation:spin .8s linear infinite;margin-right:8px;vertical-align:middle}
 @keyframes spin{to{transform:rotate(360deg)}}
-
-@media print {
-  .topbar,.tabs,.search-row,.filters,.btn-refresh { display:none !important }
-  .main { padding:0 !important }
-  .pdf-page { page-break-after: always }
-  .pdf-header { margin-bottom:1rem }
-}
+@media print{.topbar,.nav-bar,.search-row,.filters,.btn{display:none!important}.main{padding:0!important}}
 </style>
 </head>
 <body>
 
 <div class="topbar">
-  <div>
-    <div class="topbar-title">Departamento Pessoal</div>
+  <div class="topbar-left">
+    <div class="topbar-title">HP Contabilidade</div>
     <div class="topbar-sync"><span class="live-dot" id="dot"></span><span id="sync-txt">Carregando...</span></div>
   </div>
-  <div style="display:flex;gap:8px">
-    <button class="btn-refresh" onclick="gerarPDF()">📄 Salvar Relatório PDF</button>
-    <button class="btn-refresh" onclick="buscarDados()">↻ Atualizar agora</button>
+  <div class="topbar-btns">
+    <button class="btn" onclick="gerarPDF()">📄 Relatório PDF</button>
+    <button class="btn" onclick="buscarDados()">↻ Atualizar</button>
   </div>
 </div>
 
-<div class="tabs">
+<div class="nav-bar">
   <div class="dropdown-wrap">
-    <button class="dropdown-btn" onclick="toggleMenu()" id="dropdown-btn">
-      📋 <span id="aba-nome">Fechamento de Folha</span> <span class="arrow" id="arrow">▾</span>
+    <button class="dropdown-btn" id="dropdown-btn" onclick="toggleMenu()">
+      <span id="aba-icone">📋</span> <span id="aba-nome">Fechamento de Folha</span> <span class="arrow">▾</span>
     </button>
     <div class="dropdown-menu" id="dropdown-menu">
-      <div class="menu-group-label">Departamento Pessoal</div>
+      <div class="menu-label">Departamento Pessoal</div>
       <button onclick="trocarAba(0,this)">📋 Fechamento de Folha</button>
       <button onclick="trocarAba(1,this)">📄 Sem Lançamento</button>
       <button onclick="trocarAba(2,this)">💼 Pró-labore</button>
       <button onclick="trocarAba(3,this)">🏠 Doméstica</button>
       <div class="menu-divider"></div>
-      <div class="menu-group-label">Fiscal</div>
+      <div class="menu-label">Fiscal</div>
       <button onclick="trocarAba(4,this)">📊 Michelle</button>
       <button onclick="trocarAba(5,this)">📊 Suzana</button>
       <button onclick="trocarAba(6,this)">📊 Valdir</button>
@@ -116,29 +113,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <div class="main">
   <div class="erro-box" id="erro-box"></div>
   <div class="loading-msg" id="loading-area"><span class="spinner"></span>Buscando dados...</div>
-
   <div id="conteudo" style="display:none">
     <div class="metrics">
-      <div class="metric m-total"><div class="metric-label">Total de empresas</div><div class="metric-value" id="v-total">—</div></div>
-      <div class="metric m-fechadas"><div class="metric-label">100% fechadas</div><div class="metric-value" id="v-fechadas">—</div></div>
-      <div class="metric m-andamento"><div class="metric-label">Em andamento</div><div class="metric-value" id="v-andamento">—</div></div>
-      <div class="metric m-pendentes"><div class="metric-label">Sem início</div><div class="metric-value" id="v-pendentes">—</div></div>
-      <div class="metric m-etapas"><div class="metric-label">Etapas concluídas</div><div class="metric-value" id="v-etapas">—</div></div>
+      <div class="metric"><div class="metric-label">Total</div><div class="metric-value" id="v-total">—</div></div>
+      <div class="metric m-verde"><div class="metric-label">100% fechadas</div><div class="metric-value" id="v-fechadas">—</div></div>
+      <div class="metric m-ambar"><div class="metric-label">Em andamento</div><div class="metric-value" id="v-andamento">—</div></div>
+      <div class="metric m-verme"><div class="metric-label">Sem início</div><div class="metric-value" id="v-pendentes">—</div></div>
+      <div class="metric m-roxo"><div class="metric-label">Etapas concluídas</div><div class="metric-value" id="v-etapas">—</div></div>
     </div>
-
     <div class="charts-row">
-      <div class="chart-card">
-        <div class="card-title">Progresso por etapa</div>
-        <div class="chart-wrap"><canvas id="barEtapas" role="img" aria-label="Progresso por etapa"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <div class="card-title">Status geral</div>
-        <div class="chart-wrap"><canvas id="pieStatus" role="img" aria-label="Status geral"></canvas></div>
-      </div>
+      <div class="chart-card"><div class="card-title">Progresso por etapa</div><div class="chart-wrap"><canvas id="barChart"></canvas></div></div>
+      <div class="chart-card"><div class="card-title">Status geral</div><div class="chart-wrap"><canvas id="pieChart"></canvas></div></div>
     </div>
-
     <div class="search-row">
-      <input class="search-input" type="text" id="search" placeholder="Buscar empresa..." oninput="renderTabela()">
+      <input class="search-input" id="search" type="text" placeholder="Buscar empresa..." oninput="renderTabela()">
       <div class="filters">
         <button class="filter-btn active" onclick="setFiltro('todas',this)">Todas</button>
         <button class="filter-btn" onclick="setFiltro('fechadas',this)">100% fechadas</button>
@@ -147,66 +135,57 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       </div>
       <span class="result-count" id="result-count"></span>
     </div>
-
-    <div class="table-card">
-      <div class="table-header" id="table-header">
-        <span>Empresa</span><span>Cálculo</span><span>Recibo</span><span>eSocial</span>
-        <span>DARF</span><span>FGTS</span><span>Enviado</span><span>Progresso</span><span>%</span>
-      </div>
+    <div class="table-card" id="table-card">
+      <div class="table-header" id="table-header"></div>
       <div class="table-body" id="table-body"></div>
     </div>
   </div>
 </div>
 
 <script>
+// ===================== CONFIGURAÇÃO DAS ABAS =====================
 const ABAS = [
-  {
-    nome: 'Fechamento de Folha',
-    url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ67WDRR9xAC8clG6QgrtsHu8wQQmhStAzaDnCHimjJA7A96KK0icXOXeuCgZLOz9x2j8XP6cRRibka/pub?gid=806785241&single=true&output=csv',
-    etapasKeys: ['Calculo Folha','Recibo Salario','eSocial Dctfweb','Darf INSS Irf e PIS','FGTS','ENVIADO'],
-    etapasLabels: ['Cálculo','Recibo','eSocial','DARF','FGTS','Enviado']
-  },
-  {
-    nome: 'Sem Lançamento',
-    url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ67WDRR9xAC8clG6QgrtsHu8wQQmhStAzaDnCHimjJA7A96KK0icXOXeuCgZLOz9x2j8XP6cRRibka/pub?gid=1452959299&single=true&output=csv',
-    etapasKeys: ['Calculo Folha','Recibo Salario','eSocial Dctfweb','Darf INSS Irf e PIS','FGTS','ENVIADO'],
-    etapasLabels: ['Cálculo','Recibo','eSocial','DARF','FGTS','Enviado']
-  },
-  {
-    nome: 'Pró-labore',
-    url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ67WDRR9xAC8clG6QgrtsHu8wQQmhStAzaDnCHimjJA7A96KK0icXOXeuCgZLOz9x2j8XP6cRRibka/pub?gid=1291167841&single=true&output=csv',
-    etapasKeys: ['Calculo Folha','Recibo Salario','eSocial Dctfweb','Darf INSS','Enviada Cliente'],
-    etapasLabels: ['Cálculo','Recibo','eSocial','INSS','Enviado']
-  },
-  {
-    nome: 'Doméstica',
-    url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ67WDRR9xAC8clG6QgrtsHu8wQQmhStAzaDnCHimjJA7A96KK0icXOXeuCgZLOz9x2j8XP6cRRibka/pub?gid=0&single=true&output=csv',
-    etapasKeys: ['FOLHA','ESOCIAL','ENVIADO'],
-    etapasLabels: ['Folha','eSocial','Enviado'],
-    fiscal: false
-  },
-  {
-    nome: 'Michelle',
-    url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSrBZox6eF7Lna68lp4TVqZAooMIzhRt0FBNWpprnYy7N_TvWnJyDfAz_plkCsXL9jQwCn2Qky6g3wX/pub?gid=1673362838&single=true&output=csv',
-    fiscal: true
-  },
-  {
-    nome: 'Suzana',
-    url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSrBZox6eF7Lna68lp4TVqZAooMIzhRt0FBNWpprnYy7N_TvWnJyDfAz_plkCsXL9jQwCn2Qky6g3wX/pub?gid=1712397923&single=true&output=csv',
-    fiscal: true
-  },
-  {
-    nome: 'Valdir',
-    url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSrBZox6eF7Lna68lp4TVqZAooMIzhRt0FBNWpprnYy7N_TvWnJyDfAz_plkCsXL9jQwCn2Qky6g3wX/pub?gid=1038517996&single=true&output=csv',
-    fiscal: true
-  }
+  { nome:'Fechamento de Folha', icone:'📋', fiscal:false,
+    url:'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ67WDRR9xAC8clG6QgrtsHu8wQQmhStAzaDnCHimjJA7A96KK0icXOXeuCgZLOz9x2j8XP6cRRibka/pub?gid=806785241&single=true&output=csv',
+    etapasKeys:['Calculo Folha','Recibo Salario','eSocial Dctfweb','Darf INSS Irf e PIS','FGTS','ENVIADO'],
+    etapasLabels:['Cálculo','Recibo','eSocial','DARF','FGTS','Enviado'],
+    nomeCol: h => h.toLowerCase().includes('empresa') },
+  { nome:'Sem Lançamento', icone:'📄', fiscal:false,
+    url:'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ67WDRR9xAC8clG6QgrtsHu8wQQmhStAzaDnCHimjJA7A96KK0icXOXeuCgZLOz9x2j8XP6cRRibka/pub?gid=1452959299&single=true&output=csv',
+    etapasKeys:['Calculo Folha','Recibo Salario','eSocial Dctfweb','Darf INSS Irf e PIS','FGTS','ENVIADO'],
+    etapasLabels:['Cálculo','Recibo','eSocial','DARF','FGTS','Enviado'],
+    nomeCol: h => h.toLowerCase().includes('empresa') },
+  { nome:'Pró-labore', icone:'💼', fiscal:false,
+    url:'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ67WDRR9xAC8clG6QgrtsHu8wQQmhStAzaDnCHimjJA7A96KK0icXOXeuCgZLOz9x2j8XP6cRRibka/pub?gid=1291167841&single=true&output=csv',
+    etapasKeys:['Calculo Folha','Recibo Salario','eSocial Dctfweb','Darf INSS','Enviada Cliente'],
+    etapasLabels:['Cálculo','Recibo','eSocial','INSS','Enviado'],
+    nomeCol: h => h.toLowerCase().includes('empresa') },
+  { nome:'Doméstica', icone:'🏠', fiscal:false,
+    url:'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ67WDRR9xAC8clG6QgrtsHu8wQQmhStAzaDnCHimjJA7A96KK0icXOXeuCgZLOz9x2j8XP6cRRibka/pub?gid=0&single=true&output=csv',
+    etapasKeys:['FOLHA','ESOCIAL','ENVIADO'],
+    etapasLabels:['Folha','eSocial','Enviado'],
+    nomeCol: h => h.toUpperCase() === 'DOMESTICOS' },
+  { nome:'Michelle', icone:'📊', fiscal:true,
+    url:'https://docs.google.com/spreadsheets/d/e/2PACX-1vSrBZox6eF7Lna68lp4TVqZAooMIzhRt0FBNWpprnYy7N_TvWnJyDfAz_plkCsXL9jQwCn2Qky6g3wX/pub?gid=1673362838&single=true&output=csv' },
+  { nome:'Suzana', icone:'📊', fiscal:true,
+    url:'https://docs.google.com/spreadsheets/d/e/2PACX-1vSrBZox6eF7Lna68lp4TVqZAooMIzhRt0FBNWpprnYy7N_TvWnJyDfAz_plkCsXL9jQwCn2Qky6g3wX/pub?gid=1712397923&single=true&output=csv' },
+  { nome:'Valdir', icone:'📊', fiscal:true,
+    url:'https://docs.google.com/spreadsheets/d/e/2PACX-1vSrBZox6eF7Lna68lp4TVqZAooMIzhRt0FBNWpprnYy7N_TvWnJyDfAz_plkCsXL9jQwCn2Qky6g3wX/pub?gid=1038517996&single=true&output=csv' },
 ];
 
-let abaAtual = 0;
-let cache = {};
-let empresas = [], filtroAtual = 'todas';
-let barChart, pieChart, timer;
+const FISCAL_TIPOS = {
+  SIMPLES:   { label:'Simples Nacional', cor:'#1D6B3A', bg:'#E8F5EE', etapas:['XML','Apuração','DAS','DeSTDA','Enviado'] },
+  PRESUMIDO: { label:'Lucro Presumido',  cor:'#1D3D8B', bg:'#E8EEFA', etapas:['XML','Apuração','IRPJ','CSLL','PIS','COFINS','Enviado'] },
+  REAL:      { label:'Lucro Real',       cor:'#6B1D1D', bg:'#FAE8E8', etapas:['XML','Apuração','IRPJ','CSLL','PIS','COFINS','Enviado'] },
+  OUTROS:    { label:'Outros',           cor:'#444',    bg:'#F0F0F0', etapas:['XML','Apuração','Enviado'] },
+};
 
+// ===================== ESTADO =====================
+let abaAtual = 0, filtroAtual = 'todas';
+let empresas = [], cache = {};
+let barChartObj, pieChartObj, timer;
+
+// ===================== UTILS =====================
 function isDone(v) {
   const s = String(v||'').trim();
   return s !== '' && s !== '-' && s !== '0' && s.toLowerCase() !== 'null' && s !== '#N/A';
@@ -217,34 +196,133 @@ function parseCSV(text) {
   const sep = lines[0].includes(';') ? ';' : ',';
   const headers = lines[0].split(sep).map(h => h.replace(/^"|"$/g,'').trim());
   return lines.slice(1).map(line => {
-    const vals = [];
-    let cur = '', inQ = false;
+    const vals = []; let cur='', inQ=false;
     for (let c of line) {
-      if (c === '"') { inQ = !inQ; }
-      else if (c === sep[0] && !inQ) { vals.push(cur.trim()); cur = ''; }
-      else cur += c;
+      if (c==='"') inQ=!inQ;
+      else if (c===sep[0]&&!inQ) { vals.push(cur.trim()); cur=''; }
+      else cur+=c;
     }
     vals.push(cur.trim());
-    const obj = {};
-    headers.forEach((h,i) => obj[h] = (vals[i]||'').replace(/^"|"$/g,'').trim());
+    const obj={};
+    headers.forEach((h,i)=>obj[h]=(vals[i]||'').replace(/^"|"$/g,'').trim());
     return obj;
   });
 }
 
 function findCol(headers, target) {
   const t = target.toLowerCase().replace(/[^a-z0-9]/g,'');
-  return headers.find(h => h && h.toLowerCase().replace(/[^a-z0-9]/g,'').startsWith(t.slice(0,6))) || null;
+  return headers.find(h=>h&&h.toLowerCase().replace(/[^a-z0-9]/g,'').startsWith(t.slice(0,6)))||null;
 }
 
-const ICONES = ['📋','📄','💼','🏠','📊','📊','📊'];
+function getTipoKey(t) {
+  t=(t||'').toUpperCase();
+  if(t.includes('REAL')) return 'REAL';
+  if(t.includes('PRESUMIDO')) return 'PRESUMIDO';
+  if(t.includes('SIMPLES')) return 'SIMPLES';
+  return 'OUTROS';
+}
 
+function corPct(p) { return p===100?'#1D9E75':p===0?'#E24B4A':'#E9A82B'; }
+
+// ===================== PARSER FISCAL =====================
+function parseFiscalCSV(text) {
+  const lines = text.split('\n').map(l=>l.trim()).filter(l=>l);
+  const result = [];
+  let tipoAtual = 'SIMPLES';
+  let headers = null;
+  let cols = {};
+
+  for (let line of lines) {
+    const vals = [];
+    let cur='', inQ=false;
+    for (let c of line) {
+      if (c==='"') inQ=!inQ;
+      else if (c===','&&!inQ) { vals.push(cur.trim()); cur=''; }
+      else cur+=c;
+    }
+    vals.push(cur.trim());
+    const first = (vals[0]||'').trim();
+
+    // Linha de título principal
+    if (first.toUpperCase().includes('FISCAL')) continue;
+
+    // Linha de grupo (SIMPLES, PRESUMIDO, REAL)
+    if (first.toUpperCase().includes('SIMPLES')) { tipoAtual='SIMPLES'; headers=null; continue; }
+    if (first.toUpperCase().includes('PRESUMIDO')) { tipoAtual='PRESUMIDO'; headers=null; continue; }
+    if (first.toUpperCase().includes('REAL')) { tipoAtual='REAL'; headers=null; continue; }
+    if (first.toUpperCase().includes('OUTROS')) { tipoAtual='OUTROS'; headers=null; continue; }
+
+    // Linha de cabeçalho
+    if (first.toLowerCase()==='cód'||first.toLowerCase()==='cod') {
+      headers = vals.map(v=>v.toLowerCase().trim());
+      cols = {
+        nome:    headers.findIndex(h=>h.includes('empresa')||h.includes('nome')),
+        xml:     headers.findIndex(h=>h==='xml'),
+        apura:   headers.findIndex(h=>h.includes('apura')),
+        das:     headers.findIndex(h=>h==='das'),
+        destda:  headers.findIndex(h=>h.includes('destda')),
+        irpj:    headers.findIndex(h=>h.includes('irpj')),
+        csll:    headers.findIndex(h=>h.includes('csll')),
+        pis:     headers.findIndex(h=>h==='pis'),
+        cofins:  headers.findIndex(h=>h.includes('cofins')),
+        enviado: headers.findIndex(h=>h.includes('envia')),
+      };
+      continue;
+    }
+
+    // Linha de dado
+    if (!headers) continue;
+    const nome = cols.nome>=0 ? (vals[cols.nome]||'').trim() : '';
+    if (!nome) continue;
+
+    const g = i => i>=0 ? (vals[i]||'').trim() : '';
+    const tipo = FISCAL_TIPOS[tipoAtual];
+    let etapas = [];
+
+    if (tipoAtual==='SIMPLES') {
+      etapas = [
+        {label:'XML',      val:g(cols.xml),     done:isDone(g(cols.xml))},
+        {label:'Apuração', val:g(cols.apura),   done:isDone(g(cols.apura))},
+        {label:'DAS',      val:g(cols.das),      done:isDone(g(cols.das))},
+        {label:'DeSTDA',   val:g(cols.destda),  done:isDone(g(cols.destda))},
+        {label:'Enviado',  val:g(cols.enviado), done:isDone(g(cols.enviado))},
+      ];
+    } else if (tipoAtual==='PRESUMIDO'||tipoAtual==='REAL') {
+      etapas = [
+        {label:'XML',      val:g(cols.xml),     done:isDone(g(cols.xml))},
+        {label:'Apuração', val:g(cols.apura),   done:isDone(g(cols.apura))},
+        {label:'IRPJ',     val:g(cols.irpj),    done:isDone(g(cols.irpj))},
+        {label:'CSLL',     val:g(cols.csll),    done:isDone(g(cols.csll))},
+        {label:'PIS',      val:g(cols.pis),      done:isDone(g(cols.pis))},
+        {label:'COFINS',   val:g(cols.cofins),  done:isDone(g(cols.cofins))},
+        {label:'Enviado',  val:g(cols.enviado), done:isDone(g(cols.enviado))},
+      ];
+    } else {
+      etapas = [
+        {label:'XML',      val:g(cols.xml),     done:isDone(g(cols.xml))},
+        {label:'Apuração', val:g(cols.apura),   done:isDone(g(cols.apura))},
+        {label:'Enviado',  val:g(cols.enviado), done:isDone(g(cols.enviado))},
+      ];
+    }
+
+    const totalDone = etapas.filter(e=>e.done).length;
+    result.push({
+      nome, etapas, totalDone,
+      pct: Math.round((totalDone/etapas.length)*100),
+      tipoKey: tipoAtual,
+      tipoLabel: tipo.label,
+      tipoCor: tipo.cor,
+      tipoBg: tipo.bg,
+    });
+  }
+  return result;
+}
+
+// ===================== NAVEGAÇÃO =====================
 function toggleMenu() {
-  const menu = document.getElementById('dropdown-menu');
-  const btn = document.getElementById('dropdown-btn');
-  menu.classList.toggle('open');
-  btn.classList.toggle('open');
+  document.getElementById('dropdown-menu').classList.toggle('open');
+  document.getElementById('dropdown-btn').classList.toggle('open');
 }
-
 document.addEventListener('click', e => {
   if (!e.target.closest('.dropdown-wrap')) {
     document.getElementById('dropdown-menu').classList.remove('open');
@@ -254,424 +332,186 @@ document.addEventListener('click', e => {
 
 function trocarAba(idx, btn) {
   abaAtual = idx;
-  // Atualizar label do botão
-  document.getElementById('aba-nome').textContent = ABAS[idx].nome;
-  document.getElementById('dropdown-btn').childNodes[0].textContent = ICONES[idx] + ' ';
-  // Marcar ativo no menu
-  document.querySelectorAll('.dropdown-menu button').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  // Fechar menu
+  const aba = ABAS[idx];
+  document.getElementById('aba-nome').textContent = aba.nome;
+  document.getElementById('aba-icone').textContent = aba.icone;
+  document.querySelectorAll('.dropdown-menu button').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
   document.getElementById('dropdown-menu').classList.remove('open');
   document.getElementById('dropdown-btn').classList.remove('open');
-
-  filtroAtual = 'todas';
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  filtroAtual='todas';
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('.filter-btn')[0].classList.add('active');
-  document.getElementById('search').value = '';
-
-  if (cache[idx]) {
-    empresas = cache[idx];
-    renderTudo();
-  } else {
-    buscarDados();
-  }
+  document.getElementById('search').value='';
+  if (cache[idx]) { empresas=cache[idx]; renderTudo(); }
+  else buscarDados();
 }
 
-async function gerarPDF() {
-  const btn = document.querySelector('[onclick="gerarPDF()"]');
-  btn.textContent = '⏳ Gerando...';
-  btn.disabled = true;
-
-  // Buscar todas as abas que ainda não foram carregadas
-  const abaOriginal = abaAtual;
-  for (let i = 0; i < ABAS.length; i++) {
-    if (!cache[i]) {
-      abaAtual = i;
-      try {
-        const aba = ABAS[i];
-        const resp = await fetch(aba.url + '&t=' + Date.now(), { cache: 'no-store' });
-        const text = await resp.text();
-        const rows = parseCSV(text);
-        if (rows.length) {
-          const headers = Object.keys(rows[0]);
-          const isDom = i === 3;
-          const empresaKey = isDom
-            ? (headers.find(h => h.toUpperCase() === 'DOMESTICOS') || headers[1])
-            : (headers.find(h => h.toLowerCase().includes('empresa')) || headers[1]);
-          cache[i] = rows
-            .filter(r => String(r[empresaKey]||'').trim() !== '')
-            .map(r => {
-              const nome = String(r[empresaKey]||'').trim();
-              const etapas = aba.etapasKeys.map((k,j) => {
-                const col = findCol(headers, k);
-                const val = col ? String(r[col]||'').trim() : '';
-                return { label: aba.etapasLabels[j], val, done: isDone(val) };
-              });
-              const totalDone = etapas.filter(e => e.done).length;
-              return { nome, etapas, totalDone, pct: Math.round((totalDone/aba.etapasKeys.length)*100) };
-            });
-        }
-      } catch(e) { cache[i] = []; }
-    }
-  }
-  abaAtual = abaOriginal;
-
-  // Montar HTML do PDF
-  const mes = new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-  const cor = p => p===100?'#1D9E75':p===0?'#E24B4A':'#E9A82B';
-
-  let html = `
-    <html><head><meta charset="UTF-8">
-    <style>
-      body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1a1a1a;padding:20px;font-size:12px}
-      h1{font-size:18px;font-weight:600;color:#1D5C8B;margin-bottom:4px}
-      .sub{font-size:12px;color:#888;margin-bottom:24px}
-      h2{font-size:13px;font-weight:600;color:#1a1a1a;margin:20px 0 8px;padding-bottom:4px;border-bottom:2px solid #1D9E75}
-      .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
-      .m{background:#F5F5F3;border-radius:8px;padding:10px;text-align:center}
-      .m-label{font-size:10px;color:#888;margin-bottom:4px}
-      .m-val{font-size:18px;font-weight:600}
-      table{width:100%;border-collapse:collapse;margin-bottom:8px}
-      th{background:#1D5C8B;color:#fff;padding:6px 8px;text-align:left;font-size:10px;font-weight:600}
-      td{padding:5px 8px;border-bottom:1px solid #EBEBEB;font-size:11px}
-      tr:nth-child(even) td{background:#F9F9F9}
-      .badge{padding:2px 8px;border-radius:4px;font-size:10px;font-weight:500}
-      .ok{background:#EAF3DE;color:#27500A}
-      .pend{background:#F5F5F3;color:#aaa}
-      .pct{font-weight:600}
-      .page-break{page-break-after:always}
-    </style></head><body>`;
-
-  html += `<h1>Relatório Mensal — Departamento Pessoal</h1><div class="sub">Competência: ${mes} &nbsp;·&nbsp; Gerado em ${new Date().toLocaleString('pt-BR')}</div>`;
-
-  for (let i = 0; i < ABAS.length; i++) {
-    const aba = ABAS[i];
-    const dados = cache[i] || [];
-    const n = aba.etapasKeys.length;
-    const fechadas = dados.filter(e=>e.totalDone===n).length;
-    const andamento = dados.filter(e=>e.totalDone>0&&e.totalDone<n).length;
-    const pendentes = dados.filter(e=>e.totalDone===0).length;
-
-    html += `<h2>${aba.nome}</h2>`;
-    html += `<div class="metrics">
-      <div class="m"><div class="m-label">Total</div><div class="m-val">${dados.length}</div></div>
-      <div class="m"><div class="m-label">100% Fechadas</div><div class="m-val" style="color:#1D9E75">${fechadas}</div></div>
-      <div class="m"><div class="m-label">Em andamento</div><div class="m-val" style="color:#C07F0A">${andamento}</div></div>
-      <div class="m"><div class="m-label">Sem início</div><div class="m-val" style="color:#A32D2D">${pendentes}</div></div>
-    </div>`;
-
-    html += `<table><tr><th>Empresa</th>${aba.etapasLabels.map(l=>`<th>${l}</th>`).join('')}<th>%</th></tr>`;
-    dados.forEach(e => {
-      const c = cor(e.pct);
-      html += `<tr><td>${e.nome}</td>${e.etapas.map(et=>`<td><span class="badge ${et.done?'ok':'pend'}">${et.done?et.val:'—'}</span></td>`).join('')}<td class="pct" style="color:${c}">${e.pct}%</td></tr>`;
-    });
-    html += `</table>`;
-    if (i < ABAS.length - 1) html += `<div class="page-break"></div>`;
-  }
-
-  html += `</body></html>`;
-
-  const win = window.open('', '_blank');
-  win.document.write(html);
-  win.document.close();
-  setTimeout(() => { win.print(); }, 800);
-
-  btn.textContent = '📄 Salvar Relatório PDF';
-  btn.disabled = false;
-}
-
-
-const FISCAL_GRUPOS = {
-  'SIMPLES': { label:'Simples Nacional', etapas:['XML','Apuração','DAS','DeSTDA','Enviado'], cor:'#1D6B3A' },
-  'PRESUMIDO': { label:'Lucro Presumido', etapas:['XML','Apuração','IRPJ','CSLL','PIS','COFINS','Enviado'], cor:'#1D3D8B' },
-  'REAL': { label:'Lucro Real', etapas:['XML','Apuração','IRPJ','CSLL','PIS','COFINS','Enviado'], cor:'#6B1D1D' },
-  'OUTROS': { label:'Outros', etapas:['XML','Apuração','Guia','Enviado'], cor:'#444' },
-};
-
-function getTipoKey(tipo) {
-  const t = (tipo||'').toUpperCase();
-  if (t.includes('REAL')) return 'REAL';
-  if (t.includes('PRESUMIDO')) return 'PRESUMIDO';
-  if (t.includes('SIMPLES')) return 'SIMPLES';
-  return 'OUTROS';
-}
-
-function parseFiscal(rawText) {
-  // Parsear CSV bruto para lidar com múltiplos cabeçalhos por tipo
-  const lines = rawText.trim().split('\n').map(l => l.trim()).filter(l => l);
-  
-  const resultado = [];
-  let tipoAtual = 'OUTROS';
-  let colHeaders = null;
-  let idxEmpresa = -1, idxXml = -1, idxApura = -1, idxDas = -1, idxDestda = -1,
-      idxIrpj = -1, idxCsll = -1, idxPis = -1, idxCofins = -1, idxEnviado = -1, idxObs = -1;
-
-  function parseLine(line) {
-    const vals = []; let cur = '', inQ = false;
-    for (let c of line) {
-      if (c === '"') { inQ = !inQ; }
-      else if (c === ',' && !inQ) { vals.push(cur.trim()); cur = ''; }
-      else cur += c;
-    }
-    vals.push(cur.trim());
-    return vals;
-  }
-
-  function detectTipo(line) {
-    const u = line.toUpperCase();
-    if (u.includes('SIMPLES')) return 'SIMPLES';
-    if (u.includes('REAL')) return 'REAL';
-    if (u.includes('PRESUMIDO')) return 'PRESUMIDO';
-    if (u.includes('PESSOA')) return 'PF';
-    return null;
-  }
-
-  for (let line of lines) {
-    const vals = parseLine(line);
-    const first = (vals[0]||'').trim();
-
-    // Linha de título principal (ex: "FISCAL — MICHELLE")
-    if (first.toUpperCase().includes('FISCAL')) continue;
-
-    // Linha de grupo (ex: "SIMPLES NACIONAL (42 empresas)")
-    const tipo = detectTipo(first);
-    if (tipo && vals.filter(v=>v).length <= 3) {
-      tipoAtual = tipo;
-      colHeaders = null; // resetar cabeçalho para próximo grupo
-      continue;
-    }
-
-    // Linha de cabeçalho (ex: "Cód,Empresa,CNPJ,...")
-    if (first.toLowerCase() === 'cód' || first.toLowerCase() === 'cod') {
-      colHeaders = vals.map(v => v.trim().toLowerCase());
-      idxEmpresa  = colHeaders.findIndex(h => h.includes('empresa') || h.includes('nome'));
-      idxXml      = colHeaders.findIndex(h => h === 'xml');
-      idxApura    = colHeaders.findIndex(h => h.includes('apura'));
-      idxDas      = colHeaders.findIndex(h => h === 'das');
-      idxDestda   = colHeaders.findIndex(h => h.includes('destda'));
-      idxIrpj     = colHeaders.findIndex(h => h.includes('irpj'));
-      idxCsll     = colHeaders.findIndex(h => h.includes('csll'));
-      idxPis      = colHeaders.findIndex(h => h === 'pis');
-      idxCofins   = colHeaders.findIndex(h => h.includes('cofins'));
-      idxEnviado  = colHeaders.findIndex(h => h.includes('envia'));
-      idxObs      = colHeaders.findIndex(h => h.includes('observa'));
-      continue;
-    }
-
-    // Linha de dado
-    if (!colHeaders) continue;
-    const nome = idxEmpresa >= 0 ? (vals[idxEmpresa]||'').trim() : '';
-    if (!nome || nome === '') continue;
-
-    const grupo = FISCAL_GRUPOS[tipoAtual] || FISCAL_GRUPOS['OUTROS'];
-    const g = v => (v >= 0 ? (vals[v]||'').trim() : '');
-
-    let etapas = [];
-    if (tipoAtual === 'SIMPLES') {
-      etapas = [
-        {label:'XML',      val:g(idxXml),     done:isDone(g(idxXml))},
-        {label:'Apuração', val:g(idxApura),   done:isDone(g(idxApura))},
-        {label:'DAS',      val:g(idxDas),     done:isDone(g(idxDas))},
-        {label:'DeSTDA',   val:g(idxDestda),  done:isDone(g(idxDestda))},
-        {label:'Enviado',  val:g(idxEnviado), done:isDone(g(idxEnviado))},
-      ];
-    } else if (tipoAtual === 'PRESUMIDO' || tipoAtual === 'REAL') {
-      etapas = [
-        {label:'XML',      val:g(idxXml),     done:isDone(g(idxXml))},
-        {label:'Apuração', val:g(idxApura),   done:isDone(g(idxApura))},
-        {label:'IRPJ',     val:g(idxIrpj),    done:isDone(g(idxIrpj))},
-        {label:'CSLL',     val:g(idxCsll),    done:isDone(g(idxCsll))},
-        {label:'PIS',      val:g(idxPis),     done:isDone(g(idxPis))},
-        {label:'COFINS',   val:g(idxCofins),  done:isDone(g(idxCofins))},
-        {label:'Enviado',  val:g(idxEnviado), done:isDone(g(idxEnviado))},
-      ];
-    } else {
-      etapas = [
-        {label:'XML',      val:g(idxXml),     done:isDone(g(idxXml))},
-        {label:'Apuração', val:g(idxApura),   done:isDone(g(idxApura))},
-        {label:'Enviado',  val:g(idxEnviado), done:isDone(g(idxEnviado))},
-      ];
-    }
-
-    const totalDone = etapas.filter(e => e.done).length;
-    resultado.push({
-      nome, etapas, totalDone,
-      pct: Math.round((totalDone / etapas.length) * 100),
-      tipo: tipoAtual, tipoLabel: grupo.label, tipoCor: grupo.cor
-    });
-  }
-  return resultado;
-}
-
+// ===================== FETCH =====================
 async function buscarDados() {
   const aba = ABAS[abaAtual];
-  setStatus('loading', 'Atualizando...');
-  document.getElementById('erro-box').style.display = 'none';
+  setStatus('loading','Atualizando...');
+  document.getElementById('erro-box').style.display='none';
   clearTimeout(timer);
 
   try {
-    const resp = await fetch(aba.url + '&t=' + Date.now(), { cache: 'no-store' });
-    if (!resp.ok) throw new Error(`Erro ${resp.status}`);
+    const resp = await fetch(aba.url+'&t='+Date.now(), {cache:'no-store'});
+    if(!resp.ok) throw new Error(`Erro ${resp.status}`);
     const text = await resp.text();
-    const isFiscal = aba.fiscal === true;
-    const isDomestica = abaAtual === 3;
 
-    if (isFiscal) {
-      empresas = parseFiscal(text);
+    if (aba.fiscal) {
+      empresas = parseFiscalCSV(text);
     } else {
       const rows = parseCSV(text);
-      if (!rows.length) throw new Error('Aba sem dados.');
+      if(!rows.length) throw new Error('Sem dados.');
       const headers = Object.keys(rows[0]);
-      const empresaKey = isDomestica
-        ? (headers.find(h => h.toUpperCase() === 'DOMESTICOS') || headers[1])
-        : (headers.find(h => h.toLowerCase().includes('empresa')) || headers[1]);
-
+      const nomeKey = headers.find(aba.nomeCol) || headers[1];
       empresas = rows
-        .filter(r => String(r[empresaKey]||'').trim() !== '')
-        .map(r => {
-          const nome = String(r[empresaKey]||'').trim();
-          const etapas = aba.etapasKeys.map((k,i) => {
-            const col = findCol(headers, k);
-            const val = col ? String(r[col]||'').trim() : '';
-            return { label: aba.etapasLabels[i], val, done: isDone(val) };
+        .filter(r=>String(r[nomeKey]||'').trim()!=='')
+        .map(r=>{
+          const nome=String(r[nomeKey]||'').trim();
+          const etapas=aba.etapasKeys.map((k,i)=>{
+            const col=findCol(headers,k);
+            const val=col?String(r[col]||'').trim():'';
+            return {label:aba.etapasLabels[i],val,done:isDone(val)};
           });
-          const totalDone = etapas.filter(e => e.done).length;
-          return { nome, etapas, totalDone, pct: Math.round((totalDone / aba.etapasKeys.length) * 100) };
+          const totalDone=etapas.filter(e=>e.done).length;
+          return {nome,etapas,totalDone,pct:Math.round((totalDone/aba.etapasKeys.length)*100)};
         });
     }
 
-    cache[abaAtual] = empresas;
-    const agora = new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-    setStatus('ok', `Atualizado às ${agora} · próximo em 30s`);
-    document.getElementById('loading-area').style.display = 'none';
-    document.getElementById('conteudo').style.display = 'block';
-
-    // Atualizar cabeçalho da tabela
-    document.getElementById('table-header').innerHTML =
-      `<span>Empresa</span>${aba.etapasLabels.map(l=>`<span>${l}</span>`).join('')}<span>Progresso</span><span>%</span>`;
-
+    cache[abaAtual]=empresas;
+    const agora=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    setStatus('ok',`Atualizado às ${agora} · próximo em 30s`);
+    document.getElementById('loading-area').style.display='none';
+    document.getElementById('conteudo').style.display='block';
     renderTudo();
-
   } catch(err) {
-    setStatus('erro', 'Erro ao carregar');
-    document.getElementById('loading-area').style.display = 'none';
-    const box = document.getElementById('erro-box');
-    box.style.display = 'block';
-    box.innerHTML = `<strong>Não foi possível carregar a aba "${ABAS[abaAtual].nome}".</strong><br>${err.message}`;
+    setStatus('erro','Erro ao carregar');
+    document.getElementById('loading-area').style.display='none';
+    const box=document.getElementById('erro-box');
+    box.style.display='block';
+    box.innerHTML=`<strong>Não foi possível carregar "${ABAS[abaAtual].nome}".</strong><br>${err.message}`;
   }
-
-  timer = setTimeout(buscarDados, 30000);
+  timer=setTimeout(buscarDados,30000);
 }
 
-function setStatus(tipo, txt) {
-  document.getElementById('sync-txt').textContent = txt;
-  document.getElementById('dot').className = 'live-dot'+(tipo==='erro'?' erro':tipo==='loading'?' loading':'');
+function setStatus(tipo,txt) {
+  document.getElementById('sync-txt').textContent=txt;
+  document.getElementById('dot').className='live-dot'+(tipo==='erro'?' erro':tipo==='loading'?' loading':'');
 }
 
+// ===================== RENDER =====================
 function renderTudo() { renderMetrics(); renderCharts(); renderTabela(); }
 
 function renderMetrics() {
-  const aba = ABAS[abaAtual];
-  const isFiscal = aba.fiscal === true;
-  const total = empresas.length;
-  const fechadas = empresas.filter(e=>e.pct===100).length;
-  const andamento = empresas.filter(e=>e.pct>0&&e.pct<100).length;
-  const pendentes = empresas.filter(e=>e.pct===0).length;
-  const totalEt = empresas.reduce((s,e)=>s+e.totalDone,0);
-  const maxEt = isFiscal
-    ? empresas.reduce((s,e)=>s+e.etapas.length,0)
-    : total*(aba.etapasKeys||[]).length;
-  document.getElementById('v-total').textContent = total;
-  document.getElementById('v-fechadas').textContent = fechadas;
-  document.getElementById('v-andamento').textContent = andamento;
-  document.getElementById('v-pendentes').textContent = pendentes;
-  document.getElementById('v-etapas').textContent = `${totalEt}/${maxEt}`;
+  const total=empresas.length;
+  const fechadas=empresas.filter(e=>e.pct===100).length;
+  const andamento=empresas.filter(e=>e.pct>0&&e.pct<100).length;
+  const pendentes=empresas.filter(e=>e.pct===0).length;
+  const totalEt=empresas.reduce((s,e)=>s+e.totalDone,0);
+  const maxEt=empresas.reduce((s,e)=>s+e.etapas.length,0);
+  document.getElementById('v-total').textContent=total;
+  document.getElementById('v-fechadas').textContent=fechadas;
+  document.getElementById('v-andamento').textContent=andamento;
+  document.getElementById('v-pendentes').textContent=pendentes;
+  document.getElementById('v-etapas').textContent=`${totalEt}/${maxEt}`;
 }
 
 function renderCharts() {
-  const aba = ABAS[abaAtual];
-  const n = aba.etapasKeys.length;
-  const total = empresas.length;
-  const porEtapa = aba.etapasLabels.map((_,i)=>empresas.filter(e=>e.etapas[i]?.done).length);
-  const fechadas = empresas.filter(e=>e.totalDone===n).length;
-  const andamento = empresas.filter(e=>e.totalDone>0&&e.totalDone<n).length;
-  const pendentes = empresas.filter(e=>e.totalDone===0).length;
+  const aba=ABAS[abaAtual];
+  const total=empresas.length;
+  const fechadas=empresas.filter(e=>e.pct===100).length;
+  const andamento=empresas.filter(e=>e.pct>0&&e.pct<100).length;
+  const pendentes=empresas.filter(e=>e.pct===0).length;
 
-  if (barChart) barChart.destroy();
-  barChart = new Chart(document.getElementById('barEtapas'),{
+  // Coletar etapas únicas para o gráfico de barras
+  const etapasSet=[];
+  empresas.forEach(e=>e.etapas.forEach(et=>{if(!etapasSet.includes(et.label))etapasSet.push(et.label);}));
+  const porEtapa=etapasSet.map(l=>empresas.filter(e=>e.etapas.some(et=>et.label===l&&et.done)).length);
+  const totalPorEtapa=etapasSet.map(l=>empresas.filter(e=>e.etapas.some(et=>et.label===l)).length);
+
+  if(barChartObj) barChartObj.destroy();
+  barChartObj=new Chart(document.getElementById('barChart'),{
     type:'bar',
-    data:{labels:aba.etapasLabels,datasets:[
+    data:{labels:etapasSet,datasets:[
       {label:'Concluídas',data:porEtapa,backgroundColor:'#1D9E75'},
-      {label:'Pendentes',data:porEtapa.map(v=>total-v),backgroundColor:'#F0F0EE'}
+      {label:'Pendentes',data:etapasSet.map((_,i)=>totalPorEtapa[i]-porEtapa[i]),backgroundColor:'#F0F0EE'}
     ]},
     options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false}},
-      scales:{x:{stacked:true,max:total||1},y:{stacked:true,ticks:{font:{size:11}}}}}
+      scales:{x:{stacked:true,max:total||1},y:{stacked:true,ticks:{font:{size:10}}}}}
   });
 
-  if (pieChart) pieChart.destroy();
-  pieChart = new Chart(document.getElementById('pieStatus'),{
+  if(pieChartObj) pieChartObj.destroy();
+  pieChartObj=new Chart(document.getElementById('pieChart'),{
     type:'doughnut',
     data:{labels:['100% fechadas','Em andamento','Sem início'],
       datasets:[{data:[fechadas,andamento,pendentes],backgroundColor:['#1D9E75','#E9A82B','#E24B4A'],borderWidth:2,borderColor:'#fff'}]},
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:16,usePointStyle:true}}}}
+      plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:14,usePointStyle:true}}}}
   });
 }
 
 function renderTabela() {
-  const aba = ABAS[abaAtual];
-  const n = aba.etapasKeys.length;
-  const busca = document.getElementById('search').value.toLowerCase();
-  let lista = empresas.filter(e=>e.nome.toLowerCase().includes(busca));
-  if (filtroAtual==='fechadas') lista=lista.filter(e=>e.pct===100);
-  else if (filtroAtual==='andamento') lista=lista.filter(e=>e.pct>0&&e.pct<100);
-  else if (filtroAtual==='pendentes') lista=lista.filter(e=>e.pct===0);
-
+  const aba=ABAS[abaAtual];
+  const busca=document.getElementById('search').value.toLowerCase();
+  let lista=empresas.filter(e=>e.nome.toLowerCase().includes(busca));
+  if(filtroAtual==='fechadas') lista=lista.filter(e=>e.pct===100);
+  else if(filtroAtual==='andamento') lista=lista.filter(e=>e.pct>0&&e.pct<100);
+  else if(filtroAtual==='pendentes') lista=lista.filter(e=>e.pct===0);
   document.getElementById('result-count').textContent=`${lista.length} empresa${lista.length!==1?'s':''}`;
-  const cor=p=>p===100?'#1D9E75':p===0?'#E24B4A':'#E9A82B';
-  const isFiscal = ABAS[abaAtual].fiscal === true;
 
-  if (isFiscal) {
+  if(aba.fiscal) {
     // Agrupar por tipo
-    const grupos = {};
-    lista.forEach(e => {
-      if (!grupos[e.tipoLabel]) grupos[e.tipoLabel] = [];
-      grupos[e.tipoLabel].push(e);
+    const ordemTipos=['SIMPLES','PRESUMIDO','REAL','OUTROS'];
+    const grupos={};
+    lista.forEach(e=>{
+      if(!grupos[e.tipoKey]) grupos[e.tipoKey]=[];
+      grupos[e.tipoKey].push(e);
     });
-    const ordemGrupos = ['Simples Nacional','Lucro Presumido','Lucro Real','Outros'];
-    let html = '';
-    ordemGrupos.forEach(g => {
-      if (!grupos[g]) return;
-      const emps = grupos[g];
-      const maxEtapas = Math.max(...emps.map(e=>e.etapas.length));
-      const etapaLabels = emps[0].etapas.map(e=>e.label);
-      const corGrupo = emps[0].tipoCor;
-      html += `<div style="background:${corGrupo}12;border-left:3px solid ${corGrupo};padding:6px 16px;font-size:11px;font-weight:600;color:${corGrupo};letter-spacing:.05em;text-transform:uppercase">${g} — ${emps.length} empresa${emps.length!==1?'s':''}</div>`;
-      html += `<div style="display:grid;grid-template-columns:2fr ${etapaLabels.map(()=>'1fr').join(' ')} 80px 50px;gap:6px;padding:6px 16px;background:#FAFAFA;border-bottom:1px solid #EBEBEB;font-size:10px;font-weight:600;color:#888;text-transform:uppercase">
-        <span>Empresa</span>${etapaLabels.map(l=>`<span>${l}</span>`).join('')}<span>Progresso</span><span>%</span></div>`;
-      emps.forEach(e => {
-        html += `<div class="table-row" style="grid-template-columns:2fr ${e.etapas.map(()=>'1fr').join(' ')} 80px 50px">
+    document.getElementById('table-header').style.display='none';
+    let html='';
+    ordemTipos.forEach(tk=>{
+      if(!grupos[tk]||!grupos[tk].length) return;
+      const emps=grupos[tk];
+      const tipo=FISCAL_TIPOS[tk];
+      const etapaLabels=emps[0].etapas.map(e=>e.label);
+      const cols=`2fr ${etapaLabels.map(()=>'1fr').join(' ')} 80px 50px`;
+      html+=`<div class="group-header" style="background:${tipo.bg};color:${tipo.cor};border-left:3px solid ${tipo.cor}">
+        ${tipo.label} — ${emps.length} empresa${emps.length!==1?'s':''}
+      </div>`;
+      html+=`<div class="table-header" style="display:grid;grid-template-columns:${cols}">
+        <span>Empresa</span>${etapaLabels.map(l=>`<span>${l}</span>`).join('')}<span>Progresso</span><span>%</span>
+      </div>`;
+      emps.forEach(e=>{
+        const c=corPct(e.pct);
+        html+=`<div class="table-row" style="grid-template-columns:${cols}">
           <span class="empresa-name" title="${e.nome}">${e.nome}</span>
           ${e.etapas.map(et=>`<span class="step-badge ${et.done?'step-ok':'step-pend'}">${et.done?(et.val.length>5?et.val.slice(0,4)+'…':et.val):'—'}</span>`).join('')}
-          <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${e.pct}%;background:${cor(e.pct)}"></div></div>
-          <span class="pct-text" style="color:${cor(e.pct)}">${e.pct}%</span>
+          <div class="prog-bg"><div class="prog-fill" style="width:${e.pct}%;background:${c}"></div></div>
+          <span class="pct-txt" style="color:${c}">${e.pct}%</span>
         </div>`;
       });
     });
-    document.getElementById('table-body').innerHTML = html || '<div style="padding:2rem;text-align:center;color:#aaa;font-size:13px">Nenhuma empresa encontrada</div>';
-    document.getElementById('table-header').style.display = 'none';
+    document.getElementById('table-body').innerHTML=html||'<div style="padding:2rem;text-align:center;color:#aaa">Nenhuma empresa encontrada</div>';
   } else {
-    document.getElementById('table-header').style.display = '';
-    document.getElementById('table-body').innerHTML = lista.length
-      ? lista.map(e=>`
-        <div class="table-row">
+    const etapaLabels=aba.etapasLabels||[];
+    const cols=`2fr ${etapaLabels.map(()=>'1fr').join(' ')} 80px 50px`;
+    const hdr=document.getElementById('table-header');
+    hdr.style.display='grid';
+    hdr.style.gridTemplateColumns=cols;
+    hdr.innerHTML=`<span>Empresa</span>${etapaLabels.map(l=>`<span>${l}</span>`).join('')}<span>Progresso</span><span>%</span>`;
+    document.getElementById('table-body').innerHTML=lista.length
+      ?lista.map(e=>{
+        const c=corPct(e.pct);
+        return `<div class="table-row" style="grid-template-columns:${cols}">
           <span class="empresa-name" title="${e.nome}">${e.nome}</span>
-          ${e.etapas.map(et=>`<span class="step-badge ${et.done?'step-ok':'step-pend'}" title="${et.done?et.val:'Pendente'}">${et.done?(et.val.length>5?et.val.slice(0,4)+'…':et.val):'—'}</span>`).join('')}
-          <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${e.pct}%;background:${cor(e.pct)}"></div></div>
-          <span class="pct-text" style="color:${cor(e.pct)}">${e.pct}%</span>
-        </div>`).join('')
-      : '<div style="padding:2rem;text-align:center;color:#aaa;font-size:13px">Nenhuma empresa encontrada</div>';
+          ${e.etapas.map(et=>`<span class="step-badge ${et.done?'step-ok':'step-pend'}">${et.done?(et.val.length>5?et.val.slice(0,4)+'…':et.val):'—'}</span>`).join('')}
+          <div class="prog-bg"><div class="prog-fill" style="width:${e.pct}%;background:${c}"></div></div>
+          <span class="pct-txt" style="color:${c}">${e.pct}%</span>
+        </div>`;}).join('')
+      :'<div style="padding:2rem;text-align:center;color:#aaa">Nenhuma empresa encontrada</div>';
   }
 }
 
@@ -682,6 +522,83 @@ function setFiltro(f,btn){
   renderTabela();
 }
 
+// ===================== PDF =====================
+async function gerarPDF() {
+  const btn=document.querySelector('[onclick="gerarPDF()"]');
+  btn.textContent='⏳ Gerando...'; btn.disabled=true;
+  for(let i=0;i<ABAS.length;i++) {
+    if(!cache[i]) {
+      try {
+        const resp=await fetch(ABAS[i].url+'&t='+Date.now(),{cache:'no-store'});
+        const text=await resp.text();
+        if(ABAS[i].fiscal) { cache[i]=parseFiscalCSV(text); }
+        else {
+          const rows=parseCSV(text);
+          if(rows.length){
+            const headers=Object.keys(rows[0]);
+            const nomeKey=headers.find(ABAS[i].nomeCol)||headers[1];
+            cache[i]=rows.filter(r=>String(r[nomeKey]||'').trim()!=='').map(r=>{
+              const nome=String(r[nomeKey]||'').trim();
+              const etapas=ABAS[i].etapasKeys.map((k,j)=>{
+                const col=findCol(headers,k);
+                const val=col?String(r[col]||'').trim():'';
+                return {label:ABAS[i].etapasLabels[j],val,done:isDone(val)};
+              });
+              const totalDone=etapas.filter(e=>e.done).length;
+              return {nome,etapas,totalDone,pct:Math.round((totalDone/ABAS[i].etapasKeys.length)*100)};
+            });
+          }
+        }
+      } catch(e){cache[i]=[];}
+    }
+  }
+  const mes=new Date().toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+  let html=`<html><head><meta charset="UTF-8"><style>
+    body{font-family:sans-serif;color:#1a1a1a;padding:20px;font-size:12px}
+    h1{font-size:18px;color:#1D5C8B;margin-bottom:4px}
+    .sub{font-size:11px;color:#888;margin-bottom:24px}
+    h2{font-size:13px;font-weight:600;margin:20px 0 8px;padding-bottom:4px;border-bottom:2px solid #1D9E75}
+    .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+    .m{background:#F5F5F3;border-radius:6px;padding:8px;text-align:center}
+    .m-l{font-size:10px;color:#888;margin-bottom:3px}
+    .m-v{font-size:16px;font-weight:600}
+    table{width:100%;border-collapse:collapse;margin-bottom:8px;font-size:11px}
+    th{background:#1D5C8B;color:#fff;padding:5px 8px;text-align:left}
+    td{padding:4px 8px;border-bottom:1px solid #EBEBEB}
+    tr:nth-child(even) td{background:#F9F9F9}
+    .ok{background:#EAF3DE;color:#27500A;padding:1px 6px;border-radius:4px}
+    .pend{color:#bbb}
+    .page-break{page-break-after:always}
+  </style></head><body>
+  <h1>Relatório Mensal — HP Contabilidade</h1>
+  <div class="sub">Competência: ${mes} · Gerado em ${new Date().toLocaleString('pt-BR')}</div>`;
+
+  ABAS.forEach((aba,i)=>{
+    const dados=cache[i]||[];
+    const fechadas=dados.filter(e=>e.pct===100).length;
+    const andamento=dados.filter(e=>e.pct>0&&e.pct<100).length;
+    const pendentes=dados.filter(e=>e.pct===0).length;
+    html+=`<h2>${aba.icone} ${aba.nome}</h2>
+    <div class="metrics">
+      <div class="m"><div class="m-l">Total</div><div class="m-v">${dados.length}</div></div>
+      <div class="m"><div class="m-l">Fechadas</div><div class="m-v" style="color:#1D9E75">${fechadas}</div></div>
+      <div class="m"><div class="m-l">Andamento</div><div class="m-v" style="color:#C07F0A">${andamento}</div></div>
+      <div class="m"><div class="m-l">Sem início</div><div class="m-v" style="color:#A32D2D">${pendentes}</div></div>
+    </div>
+    <table><tr><th>Empresa</th>${(dados[0]?.etapas||[]).map(e=>`<th>${e.label}</th>`).join('')}<th>%</th></tr>
+    ${dados.map(e=>`<tr><td>${e.nome}</td>${e.etapas.map(et=>`<td>${et.done?`<span class="ok">${et.val}</span>`:'<span class="pend">—</span>'}</td>`).join('')}<td style="color:${corPct(e.pct)};font-weight:600">${e.pct}%</td></tr>`).join('')}
+    </table>${i<ABAS.length-1?'<div class="page-break"></div>':''}`;
+  });
+  html+='</body></html>';
+
+  const win=window.open('','_blank');
+  win.document.write(html);
+  win.document.close();
+  setTimeout(()=>win.print(),800);
+  btn.textContent='📄 Relatório PDF'; btn.disabled=false;
+}
+
+// ===================== INIT =====================
 buscarDados();
 </script>
 </body>
